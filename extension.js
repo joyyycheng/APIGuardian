@@ -51,10 +51,11 @@ function activate(context) {
             }
             matchFileInfo(jsFile);
             let i = matchAPIs(jsFile, "js");
-
+            console.log("js api: ", i);
             console.log("PY :", pyFile);
             matchFileInfo(pyFile);
             let p = matchAPIs(pyFile, "py");
+            console.log("py api: ", p);
 
             console.log(range);
 

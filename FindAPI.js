@@ -7,14 +7,14 @@ function matchAPIs(extractedData, extension)
     for (const fileMap of extractedData) {
         for (const [fileName, fileData] of fileMap) {
             for (const [key, value] of fileData.variables.entries()) {
-                if (value.includes("https")) {
-                    console.log(value);
+                if (value.includes("https") || value.includes("http")) {
                     while ((match = variableRegex.exec(value)) !== null) {
                         variableNames.push(match[1]); // Add the variable name to the array
                     }
 
                     const variableValues = new Map(
                         variableNames.map(variable => {
+                            
                             let value = fileData.variables.get(variable);
                             if (typeof value === 'string') {
                                 value = value.replace(/^['"]|['"]$/g, ''); // Remove leading and trailing quotes
