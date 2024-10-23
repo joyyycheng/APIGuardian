@@ -25,23 +25,10 @@ function activate(context) {
                 switch (fileExtension) {
                     case "js":
                         const js = extractElements(fileContent, path.basename(document.fileName, path.extname(document.fileName)), fileExtension);
-                        // for (const [fileName, fileData] of js) {
-                        //     if(fileData.apiLocations.get(fileName))
-                        //     {
-                        //         highlightLineInFile(fileName+"."+fileExtension, fileData.apiLocations.get(fileName))
-                        //     } 
-                        // }
                         jsFile.push(js)
                         break;
                     case "py":
                         const py = extractElements(fileContent, path.basename(document.fileName, path.extname(document.fileName)), fileExtension);
-                        // for (const [fileName, fileData] of py) {
-                        //     if(fileData.apiLocations.get(fileName))
-                        //     {
-                        //         highlightLineInFile(fileName+"."+fileExtension, fileData.apiLocations.get(fileName))
-                        //     } 
-                        // }
-                        
                         pyFile.push(py)
                         break;
                     default:
@@ -49,6 +36,8 @@ function activate(context) {
                         break;
                 }
             }
+
+            // from here since the file name and line of code was added here, match the line and hover over the code to show the new url
             matchFileInfo(jsFile);
             let i = matchAPIs(jsFile, "js");
 
