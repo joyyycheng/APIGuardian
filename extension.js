@@ -21,7 +21,9 @@ function activate(context) {
                 const document = await vscode.workspace.openTextDocument(file);
                 const fileExtension = document.fileName.split('.').pop();
                 const fileContent = document.getText();
-
+                if (file.fsPath.includes('node_modules')|| file.fsPath.includes('vscode')) {
+                    continue; // Skip this file
+                }
                 switch (fileExtension) {
                     case "js":
                         const js = extractElements(fileContent, path.basename(document.fileName, path.extname(document.fileName)), fileExtension);
@@ -51,10 +53,11 @@ function activate(context) {
             }
             matchFileInfo(jsFile);
             let i = matchAPIs(jsFile, "js");
+            console.log("js :", jsFile);
             console.log("js api: ", i);
-            console.log("PY :", pyFile);
             matchFileInfo(pyFile);
             let p = matchAPIs(pyFile, "py");
+            console.log("js :", pyFile);
             console.log("py api: ", p);
 
             console.log(range);

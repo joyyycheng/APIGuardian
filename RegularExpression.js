@@ -1,4 +1,4 @@
-function extractElements(code, fileName, extension)
+function extractElements(codes, fileName, extension)
 {
     let variableRegex;
     let functionRegex;
@@ -12,9 +12,9 @@ function extractElements(code, fileName, extension)
             importRegex = /^\s*(import|from)\s+([a-zA-Z_][a-zA-Z0-9_.]*)\s*(?:import\s+([a-zA-Z_][a-zA-Z0-9_,\s]*))?\s*$/gm;
             break;
         case "js":
-            variableRegex = /^\s*(let|const|var)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.*?);?$/gm;
+            variableRegex = /^\s*(const|let|var)?\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.*?);?$/gm;
             functionRegex = /^\s*(async\s+)?(function\s+([a-zA-Z_][a-zA-Z0-9_]*)|\(?\s*([a-zA-Z_][a-zA-Z0-9_]*)?\s*\)?\s*=>)\s*\((.*?)\)/gm;
-            importRegex = /^\s*const\s+(\{[^}]+\})\s*=\s*require\(\s*['"`]([^'"]+)['"`]\s*\);?$/gm;
+            importRegex = /^\s*(const)?\s*(\{([^}]+)\}|\w+)\s*=\s*(require\(\s*['"]([^'"]+)['"]\s*\)|import\s+\{([^}]+)\}\s*from\s*['"]([^'"]+)['"]\s*);?\s*$/gm;
             break;
         case "cs":
             variableRegex = /^\s*(int|double|float|string|var|bool|char)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*=/gm;
@@ -36,11 +36,20 @@ function extractElements(code, fileName, extension)
 
     let match;
 
+    const code = codes.replace(/(^|\s)(\/\/.*$)/gm, (match, p1, p2) => {
+        // Check if the previous characters contain http or https
+        if (p1.trim().endsWith('http') || p1.trim().endsWith('https')) {
+            return match; // keep the comment if it's a URL
+        }
+        return ''; // remove the comment otherwise
+    });
+
+
     while ((match = variableRegex.exec(code)) !== null) {
         if(extension == "js")
         {
             variables.set(match[2], match[3]);
-            if(match[3].includes("https"))
+            if(match[3].includes("https") || match[3].includes("http"))
             {
                 const i = match[0].replace(/^\n/, '')
                 console.log(i);
@@ -49,7 +58,7 @@ function extractElements(code, fileName, extension)
         } else if (extension == "py")
         {
             variables.set(match[1], match[2]);
-            if(match[2].includes("https"))
+            if(match[2].includes("https") || match[2].includes("http"))
             {
                 const j = match[0].replace(/^\n/, '')
                 console.log(j);
@@ -85,10 +94,9 @@ function extractElements(code, fileName, extension)
     while ((match = importRegex.exec(code)) !== null) {
         if(extension == "js")
         {
-            const importedNames = match[1].replace(/[{}]/g, '').split(',').map(name => name.trim()); // Extract names inside curly braces
-            const modulePath = match[2];
-            const moduleName = modulePath.split('/').pop().replace(/\.[^.]+$/, ''); 
-            imports.set(importedNames, moduleName);
+            //const importedNames = match[1].replace(/[{}]/g, '').split(',').map(name => name.trim()); // Extract names inside curly braces
+            const modulePath = match[5].replace('./', '').replace('.js', '');;
+            imports.set(match[3].trim(), modulePath);
         } else if(extension == "py")
         {
             const importType = match[1]; // 'import' or 'from'
@@ -155,7 +163,7 @@ function extractElements(code, fileName, extension)
             // Search for function calls using the regex
             while ((match = regex.exec(code)) !== null) {
                 const args = match[2] ? match[2].split(',').map(arg => arg.trim()) : []; // Get arguments  
-                functionCalls.set(params, args)
+                functionCalls.set(params[0], args)
             }
         }
         

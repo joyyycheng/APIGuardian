@@ -14,11 +14,11 @@ function matchAPIs(extractedData, extension)
 
                     const variableValues = new Map(
                         variableNames.map(variable => {
-                            
                             let value = fileData.variables.get(variable);
                             if (typeof value === 'string') {
                                 value = value.replace(/^['"]|['"]$/g, ''); // Remove leading and trailing quotes
                             }
+                            
                             return [variable, value];
                         })
                     );

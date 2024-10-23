@@ -11,7 +11,7 @@ function matchFileInfo(extractedData, fileNames) {
                 // fileName : main
                 for(const [key, value] of fileData.functionCalls)
                 {
-                    const functionName = key[0];
+                    const functionName = key;
                     const results = [];
                     for (const param of value) {
                         let matched = false;
@@ -45,8 +45,15 @@ function matchFileInfo(extractedData, fileNames) {
             // Iterate over function definitions
             for (const [functionName, params] of functions) {
                 if (functionFound.has(functionName)) {
-                    const calls = functionFound.get(functionName);
-                    fileData.variables.set(params, calls);
+                    if(params.includes(','))
+                    {
+                        const splitParams = params.split(',').map(item => item.trim());
+                        for (let i = 0; i < splitParams.length; i++) {
+                            const calls = functionFound.get(functionName);
+                            fileData.variables.set(splitParams[i], calls[i]);
+                        }
+                    }
+                    
                 } else {
                     console.log(`Function ${functionName} in ${fileName} has no matching calls.`);
                 }
