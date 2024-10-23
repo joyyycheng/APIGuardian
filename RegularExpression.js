@@ -53,7 +53,7 @@ function extractElements(codes, fileName, extension)
             {
                 const i = match[0].replace(/^\n/, '')
                 console.log(i);
-                apiLocations.set(fileName, match[0].replace(/^\n/, ''));// Store the length for highlighting
+                apiLocations.set(fileName + "." + extension, match[0].replace(/^\n/, ''));// Store the length for highlighting
             }
         } else if (extension == "py")
         {
@@ -62,7 +62,7 @@ function extractElements(codes, fileName, extension)
             {
                 const j = match[0].replace(/^\n/, '')
                 console.log(j);
-                apiLocations.set(fileName, match[0].replace(/^\n/, '')); // Store the length for highlighting
+                apiLocations.set(fileName + "." + extension, match[0].replace(/^\n/, '')); // Store the length for highlighting
             } 
         }
     }
@@ -96,7 +96,7 @@ function extractElements(codes, fileName, extension)
         {
             //const importedNames = match[1].replace(/[{}]/g, '').split(',').map(name => name.trim()); // Extract names inside curly braces
             const modulePath = match[5].replace('./', '').replace('.js', '');;
-            imports.set(match[3].trim(), modulePath);
+            imports.set(match[3], modulePath);
         } else if(extension == "py")
         {
             const importType = match[1]; // 'import' or 'from'

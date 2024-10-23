@@ -52,6 +52,11 @@ function matchFileInfo(extractedData, fileNames) {
                             const calls = functionFound.get(functionName);
                             fileData.variables.set(splitParams[i], calls[i]);
                         }
+                    } else
+                    {
+                        const calls = functionFound.get(functionName);
+                        fileData.variables.set(params, calls[0]);
+                        
                     }
                     
                 } else {

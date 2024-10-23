@@ -5,6 +5,7 @@ const path = require('path');
 const { extractElements} = require('./RegularExpression');
 const { matchFileInfo } = require('./FileMatch');
 const { matchAPIs } = require('./FindAPI');
+const { processFiles } = require('./HighlightandMessage');
 /**
  * @param {vscode.ExtensionContext} context
  */
@@ -16,12 +17,11 @@ function activate(context) {
             const files = await vscode.workspace.findFiles(globPattern);
             const jsFile =[]
             const pyFile =[]
-            const range = []
             for (const file of files) {
                 const document = await vscode.workspace.openTextDocument(file);
                 const fileExtension = document.fileName.split('.').pop();
                 const fileContent = document.getText();
-                if (file.fsPath.includes('node_modules')|| file.fsPath.includes('vscode')) {
+                if (file.fsPath.includes('node_modules')|| file.fsPath.includes('vscode') || file.fsPath.includes('__pycache__')) {
                     continue; // Skip this file
                 }
                 switch (fileExtension) {
@@ -42,20 +42,19 @@ function activate(context) {
             // from here since the file name and line of code was added here, match the line and hover over the code to show the new url
             matchFileInfo(jsFile);
             let i = matchAPIs(jsFile, "js");
-            console.log("js :", jsFile);
             console.log("js api: ", i);
+            processFiles(jsFile, i, "js", context);
             matchFileInfo(pyFile);
             let p = matchAPIs(pyFile, "py");
-            console.log("js :", pyFile);
             console.log("py api: ", p);
-
-            console.log(range);
-
+            processFiles(pyFile, p, "py", context);
         }
     });
 
     context.subscriptions.push(disposable);
 }
+
+
 
 // This method is called when your extension is deactivated
 function deactivate() {}

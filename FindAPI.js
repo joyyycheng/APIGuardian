@@ -3,7 +3,7 @@ function matchAPIs(extractedData, extension)
     const variableRegex = /\{(.*?)}/g;
     let match;
     const variableNames = [];
-    let APIurls = []
+    const APIurls = new Map();
     for (const fileMap of extractedData) {
         for (const [fileName, fileData] of fileMap) {
             for (const [key, value] of fileData.variables.entries()) {
@@ -34,9 +34,7 @@ function matchAPIs(extractedData, extension)
                             finalURL = finalURL.replace(`\{${key}}`, value); // Create a new string with the replaced value
                         }
                     }
-
-                    APIurls.push(finalURL);
-
+                    APIurls.set(value, finalURL);
                 }
             }
         }
