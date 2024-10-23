@@ -15,7 +15,7 @@
     "commands": [
       {
         "command": "firstextension.search_stackoverflow",
-        "title": "Search File for API"
+        "title": "Search for API"
       }
     ],
     "menus": {
@@ -43,6 +43,8 @@
   },
   "dependencies": {
     "axios": "^1.7.7",
-    "vscode": "^1.1.37"
+    "generator-code": "^1.11.3",
+    "vscode": "^1.1.37",
+    "yo": "^5.0.0"
   }
 }

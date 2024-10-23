@@ -21,7 +21,9 @@ function activate(context) {
                 const document = await vscode.workspace.openTextDocument(file);
                 const fileExtension = document.fileName.split('.').pop();
                 const fileContent = document.getText();
-
+                if (file.fsPath.includes('node_modules')|| file.fsPath.includes('vscode')) {
+                    continue; // Skip this file
+                }
                 switch (fileExtension) {
                     case "js":
                         const js = extractElements(fileContent, path.basename(document.fileName, path.extname(document.fileName)), fileExtension);
@@ -40,10 +42,12 @@ function activate(context) {
             // from here since the file name and line of code was added here, match the line and hover over the code to show the new url
             matchFileInfo(jsFile);
             let i = matchAPIs(jsFile, "js");
-
-            console.log("PY :", pyFile);
+            console.log("js :", jsFile);
+            console.log("js api: ", i);
             matchFileInfo(pyFile);
             let p = matchAPIs(pyFile, "py");
+            console.log("js :", pyFile);
+            console.log("py api: ", p);
 
             console.log(range);
 
