@@ -64,7 +64,7 @@ function highlightMatchInFile(document, keyToHighlight, text, context) {
         provideHover(document, position) {
             // Check if the position is within any of the ranges
             const isInRange = ranges.some(({ range }) => range.contains(position));
-
+            console.log(ranges);
             if (isInRange) {
                 return new vscode.Hover(text);
             }

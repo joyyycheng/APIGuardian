@@ -51,9 +51,9 @@ function extractElements(codes, fileName, extension)
             variables.set(match[2], match[3]);
             if(match[3].includes("https") || match[3].includes("http"))
             {
-                const i = match[0].replace(/^\n/, '')
+                const i = match[0].replace(/^\n/, '').replace(/\r\n/g, '')
                 console.log(i);
-                apiLocations.set(fileName + "." + extension, match[0].replace(/^\n/, ''));// Store the length for highlighting
+                apiLocations.set(fileName + "." + extension, i);// Store the length for highlighting
             }
         } else if (extension == "py")
         {
@@ -149,12 +149,12 @@ function extractElements(codes, fileName, extension)
         // Create a regex pattern for the function name to find its calls
         if(extension == "js")
         {
-            const regex = new RegExp(`(?<!\\w)(${functionName})\\s*\\((.*?)\\)`, 'g');
+            const regex = new RegExp(`(?<!\\w)(${functionName.trim()})\\s*\\((.*?)\\)`, 'g');
             let match;
             // Search for function calls using the regex
             while ((match = regex.exec(code)) !== null) {
                 const args = match[2] ? match[2].split(',').map(arg => arg.trim()) : []; // Get arguments  
-                functionCalls.set(functionName, args)
+                functionCalls.set(functionName.trim(), args)
             }
         } else if(extension == "py")
         {
