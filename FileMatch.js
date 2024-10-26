@@ -37,35 +37,54 @@ function matchFileInfo(extractedData, fileNames) {
         }
     }
 
-    // if the code is get_weather('singapore')
+    console.log(functionFound)
+
     for (const fileMap of extractedData) {
         for (const [fileName, fileData] of fileMap) {
             const functions = fileData.functions;
             const variables = fileData.variables;
+    
             // Iterate over function definitions
             for (const [functionName, params] of functions) {
                 if (functionFound.has(functionName)) {
-                    if(params.includes(','))
-                    {
+                    if (params.includes(',')) {
                         const splitParams = params.split(',').map(item => item.trim());
                         for (let i = 0; i < splitParams.length; i++) {
                             const calls = functionFound.get(functionName);
-                            fileData.variables.set(splitParams[i], calls[i]);
+                            let paramName = splitParams[i];
+    
+                            // Check for existing variable and create a unique name if necessary
+                            let uniqueParamName = paramName;
+                            let index = 1;
+                            while (variables.has(uniqueParamName)) {
+                                uniqueParamName = `${paramName}_${index}`; // Create unique variable name
+                                index++;
+                            }
+    
+                            // Set the variable in the map
+                            variables.set(uniqueParamName, calls[i]);
                         }
-                    } else
-                    {
+                    } else {
                         const calls = functionFound.get(functionName);
-                        fileData.variables.set(params, calls[0]);
-                        
+                        let uniqueParamName = params;
+    
+                        // Check for existing variable and create a unique name if necessary
+                        let index = 1;
+                        while (variables.has(uniqueParamName)) {
+                            uniqueParamName = `${params}_${index}`; // Create unique variable name
+                            index++;
+                        }
+    
+                        // Set the variable in the map
+                        variables.set(uniqueParamName, calls[0]);
                     }
-                    
                 } else {
                     console.log(`Function ${functionName} in ${fileName} has no matching calls.`);
                 }
             }
         }
     }
-
+    
 
 }
 

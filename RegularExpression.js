@@ -46,26 +46,68 @@ function extractElements(codes, fileName, extension)
 
 
     while ((match = variableRegex.exec(code)) !== null) {
-        if(extension == "js")
-        {
-            variables.set(match[2], match[3]);
-            if(match[3].includes("https") || match[3].includes("http"))
-            {
-                const i = match[0].replace(/^\n/, '').replace(/\r\n/g, '')
-                console.log(i);
-                apiLocations.set(fileName + "." + extension, i);// Store the length for highlighting
+        if (extension == "js") {
+            let key = match[2];
+            let newKey = key; // Start with the original key
+            let count = 1;
+    
+            // Check for existing keys in variables and create a unique key if needed
+            while (variables.has(newKey)) {
+                newKey = `${key}_${count}`; // Append _1, _2, etc.
+                count++;
             }
-        } else if (extension == "py")
-        {
-            variables.set(match[1], match[2]);
-            if(match[2].includes("https") || match[2].includes("http"))
-            {
-                const j = match[0].replace(/^\n/, '')
-                console.log(j);
-                apiLocations.set(fileName + "." + extension, match[0].replace(/^\n/, '')); // Store the length for highlighting
-            } 
+    
+            variables.set(newKey, match[3]); // Set the unique key in variables
+    
+            if (match[3].includes("https") || match[3].includes("http")) {
+                const i = match[0].replace(/^\n/, '').replace(/\r\n/g, '');
+    
+                // Check for duplicates in apiLocations
+                let apiKey = `${fileName}.${extension}`; // Use the original file key
+                let apiNewKey = apiKey; // Start with the original api key
+                count = 1;
+    
+                // Create a unique key if the apiLocations already contains it
+                while (apiLocations.has(apiNewKey)) {
+                    apiNewKey = `${apiKey}_${count}`; // Append _1, _2, etc.
+                    count++;
+                }
+    
+                apiLocations.set(apiNewKey, i); // Store the value in apiLocations
+            }
+        } else if (extension == "py") {
+            let key = match[1];
+            let newKey = key; // Start with the original key
+            let count = 1;
+    
+            // Check for existing keys in variables and create a unique key if needed
+            while (variables.has(newKey)) {
+                newKey = `${key}_${count}`; // Append _1, _2, etc.
+                count++;
+            }
+    
+            variables.set(newKey, match[2]); // Set the unique key in variables
+    
+            if (match[2].includes("https") || match[2].includes("http")) {
+                const j = match[0].replace(/^\n/, '').replace(/\r\n/g, '');
+    
+                // Check for duplicates in apiLocations
+                let apiKey = `${fileName}.${extension}`; // Use the original file key
+                let apiNewKey = apiKey; // Start with the original api key
+                count = 1;
+    
+                // Create a unique key if the apiLocations already contains it
+                while (apiLocations.has(apiNewKey)) {
+                    apiNewKey = `${apiKey}_${count}`; // Append _1, _2, etc.
+                    count++;
+                }
+    
+                apiLocations.set(apiNewKey, j); // Store the value in apiLocations
+            }
         }
     }
+    
+    
 
     while ((match = functionRegex.exec(code)) !== null) {
         if(extension == "js")
@@ -93,10 +135,21 @@ function extractElements(codes, fileName, extension)
     // Find import statements
     while ((match = importRegex.exec(code)) !== null) {
         if(extension == "js")
-        {
+        {   let importedNames = [];
             //const importedNames = match[1].replace(/[{}]/g, '').split(',').map(name => name.trim()); // Extract names inside curly braces
-            const modulePath = match[5].replace('./', '').replace('.js', '');;
-            imports.set(match[3], modulePath);
+            const modulePath = match[5].replace('./', '').replace('.js', '');
+            const functions = match[3]
+            if (functions) {
+                if (functions.includes(',')) { 
+                    importedNames = functions
+                        .split(',')
+                        .map(name => name.trim().replace(/['"]/g, '')); // Clean quotes
+                } else {
+                    // If no comma is present, trim the specific import and add it
+                    importedNames = [functions.trim().replace(/['"]/g, '')];
+                }
+            }
+            imports.set(modulePath, importedNames);
         } else if(extension == "py")
         {
             const importType = match[1]; // 'import' or 'from'
@@ -146,25 +199,63 @@ function extractElements(codes, fileName, extension)
     });
 
     imports.forEach((params, functionName) => {
-        // Create a regex pattern for the function name to find its calls
+        
+        if(functionName == undefined)
+        {
+            return;
+        } 
         if(extension == "js")
         {
-            const regex = new RegExp(`(?<!\\w)(${functionName.trim()})\\s*\\((.*?)\\)`, 'g');
-            let match;
-            // Search for function calls using the regex
-            while ((match = regex.exec(code)) !== null) {
-                const args = match[2] ? match[2].split(',').map(arg => arg.trim()) : []; // Get arguments  
-                functionCalls.set(functionName.trim(), args)
+            if (Array.isArray(params)) { // Check if functionName is an array
+                for (let i = 0; i < params.length; i++) {
+                    let param = params[i];  // Get the parameter
+            
+                    // Trim any leading/trailing whitespace
+                    if (param !== param.trim()) {
+                        param = param.trim(); // Trim if there is whitespace
+                    }
+            
+                    const regex = new RegExp(`(?<!\\w)(${param})\\s*\\((.*?)\\)`, 'g'); // Separate regex for each param
+            
+                    let match;
+                    while ((match = regex.exec(code)) !== null) {
+                        const args = match[2] ? match[2].split(',').map(arg => arg.trim()) : []; // Get arguments
+                        functionCalls.set(param, args);
+                    }
+                }
+            } else {
+                let params = functionName
+                if (params !== params.trim()) {
+                    params = params.trim(); // Trim if there is whitespace
+                }
+        
+                const regex = new RegExp(`(?<!\\w)(${params})\\s*\\((.*?)\\)`, 'g'); // Separate regex for each param
+        
+                let match;
+                while ((match = regex.exec(code)) !== null) {
+                    const args = match[2] ? match[2].split(',').map(arg => arg.trim()) : []; // Get arguments
+                    functionCalls.set(params, args);
+                }
             }
+            
         } else if(extension == "py")
         {
-            const regex = new RegExp(`(?<!\\w)(${params})\\s*\\((.*?)\\)`, 'g');
-            let match;
-            // Search for function calls using the regex
-            while ((match = regex.exec(code)) !== null) {
-                const args = match[2] ? match[2].split(',').map(arg => arg.trim()) : []; // Get arguments  
-                functionCalls.set(params[0], args)
+            for (let i = 0; i < params.length; i++) {
+                let param = params[i];  // Trim any leading/trailing whitespace
+            
+                if (param !== param.trim()) {
+                    param = param.trim(); // Trim if there is whitespace
+                }
+            
+                const regex = new RegExp(`(?<!\\w)(${param})\\s*\\((.*?)\\)`, 'g'); // Separate regex for each param
+            
+                let match;
+                while ((match = regex.exec(code)) !== null) {
+                    const args = match[2] ? match[2].split(',').map(arg => arg.trim()) : []; // Get arguments
+                    functionCalls.set(param, args);
+                }
             }
+            
         }
         
 

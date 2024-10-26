@@ -1,80 +1,95 @@
 const vscode = require('vscode');
+const hoverProviders = new Map(); // Store hover providers per document URI
 
 function processFiles(fileData, apiData, fileType, context) {
+    const matches = []; // Store matches to highlight later
+    const documentPromises = []; // To accumulate promises for opening documents
+
     for (const fileMap of fileData) {
         for (const [fileName, fileData] of fileMap) {
             if (fileData.apiLocations.size !== 0) {
                 for (const [key, value] of apiData) {
                     for (const [key1, value1] of fileData.apiLocations) {
-                        // Check if the value includes the key
                         if (value1.includes(key)) {
-                            console.log(`Match found in ${fileType}: key = ${key}, value = ${value1} in file ${key1}`);
+                            const cleanedKey = key1.replace(/(_\d+)$/, ''); 
 
-                            const filePath = vscode.workspace.workspaceFolders[0].uri.fsPath + '/' + key1; // Adjust file path accordingly
+                            const filePath = vscode.workspace.workspaceFolders[0].uri.fsPath + '/' + cleanedKey;
                             const fileUri = vscode.Uri.file(filePath);
 
-                            vscode.workspace.openTextDocument(fileUri).then((d) => {
-                                highlightMatchInFile(d, value1, value, context);
+                            // Open the document and accumulate matches
+                            const docPromise = vscode.workspace.openTextDocument(fileUri).then((d) => {
+                                matches.push({ document: d, keyToHighlight: value1, text: value});
                             }, (error) => {
                                 vscode.window.showErrorMessage(`Could not open ${fileType} file: ${error.message}`);
                             });
 
-                            break;  // Exit the loop if a match is found
+                            documentPromises.push(docPromise); // Push the promise to the array
                         }
                     }
                 }
             }
         }
     }
+
+    Promise.all(documentPromises).then(() => {
+        if (matches.length > 0) {
+            highlightMatchesInFile(matches, context);
+        }
+    });
 }
 
-function highlightMatchInFile(document, keyToHighlight, text, context) {
-    // Get the active text editor
+function highlightMatchesInFile(matches, context) {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
         return; // No editor is active
     }
 
-    // Create a decoration type with a yellow background to highlight matches
     const decorationType = vscode.window.createTextEditorDecorationType({
-        backgroundColor: '#FFFFE0',  // Highlight with yellow background\
+        backgroundColor: '#FFFFE0',
     });
 
-    // Store ranges where matches are found
-    const ranges = [];
+    const ranges = []; // Store all ranges to highlight
+    const hoverData = new Map(); // To store hover text based on range
 
-    // Iterate through each line in the document to find the key
-    for (let line = 0; line < document.lineCount; line++) {
-        const lineText = document.lineAt(line).text;
-
-        // Check if the line contains the key
-        const index = lineText.indexOf(keyToHighlight);
-        if (index !== -1) {
-            const startPos = new vscode.Position(line, index);
-            const endPos = new vscode.Position(line, index + keyToHighlight.length);
-            const range = new vscode.Range(startPos, endPos);
-            ranges.push({ range });
+    for (const { document, keyToHighlight, text } of matches) {
+        for (let line = 0; line < document.lineCount; line++) {
+            const lineText = document.lineAt(line).text.trim();
+            const index = lineText.indexOf(keyToHighlight.trim());
+            if (index !== -1) {
+                const startPos = new vscode.Position(line, index);
+                const endPos = new vscode.Position(line, index + keyToHighlight.length);
+                const range = new vscode.Range(startPos, endPos);
+                ranges.push(range);
+                const rangeKey = `${line}:${index}`;
+                hoverData.set(rangeKey, text); // Store hover text for each range
+                break;
+            }
         }
     }
 
-    // Apply the decoration to the matching ranges
-    editor.setDecorations(decorationType, ranges);
+    //editor.setDecorations(decorationType, ranges);
 
-    const hoverProvider = vscode.languages.registerHoverProvider(document.languageId, {
-        provideHover(document, position) {
-            // Check if the position is within any of the ranges
-            const isInRange = ranges.some(({ range }) => range.contains(position));
-            console.log(ranges);
-            if (isInRange) {
-                return new vscode.Hover(text);
+    const documentUri = matches[0].document.uri.toString(); // Get the URI from the first match
+    if (!hoverProviders.has(documentUri)) {
+        const hoverProvider = vscode.languages.registerHoverProvider(matches[0].document.languageId, {
+            provideHover(document, position) {
+                const currentRange = ranges.find(range => range.contains(position));
+                if (currentRange) {
+                    const line = currentRange.start.line;
+                    const character = currentRange.start.character;
+                    const hoverKey = `${line}:${character}`; // Create the same key to retrieve hover text
+                    const hoverText = hoverData.get(hoverKey);
+                    if (hoverText) {
+                        return new vscode.Hover(hoverText);
+                    }
+                }
+                return null; // No hover information
             }
-            return null; // No hover information
-        }
-    });
+        });
 
-    // Clean up hover provider when the document is closed
-    context.subscriptions.push(hoverProvider);
+        hoverProviders.set(documentUri, hoverProvider);
+        context.subscriptions.push(hoverProvider);
+    }
 }
-
 
 module.exports = { processFiles };

@@ -2,10 +2,12 @@ const vscode = require('vscode');
 const fs = require('fs');
 const path = require('path');
 
+
 const { extractElements} = require('./RegularExpression');
 const { matchFileInfo } = require('./FileMatch');
 const { matchAPIs } = require('./FindAPI');
 const { processFiles } = require('./HighlightandMessage');
+const { fetchApiResults } = require('./CheckAPI');
 /**
  * @param {vscode.ExtensionContext} context
  */
@@ -41,18 +43,17 @@ function activate(context) {
 
             // from here since the file name and line of code was added here, match the line and hover over the code to show the new url
             matchFileInfo(jsFile);
-            
-            console.log("js: ", jsFile);
             let i = matchAPIs(jsFile, "js");
-            console.log("js api: ", i);
-            processFiles(jsFile, i, "js", context);
+            const apiResults = await fetchApiResults(i);
+            console.log("results: ", apiResults);
+            processFiles(jsFile, apiResults, "js", context);
             
             matchFileInfo(pyFile);
-            
-            console.log("py: ", pyFile);
+            console.log("py File: ", pyFile);
             let p = matchAPIs(pyFile, "py");
-            console.log("py api: ", p);
-            //processFiles(pyFile, p, "py", context);
+            const apiResults1 = await fetchApiResults(p);
+            console.log("results: ", apiResults1);
+            processFiles(pyFile, apiResults1, "py", context);
         }
     });
 
