@@ -1,6 +1,6 @@
 {
-  "name": "firstextension",
-  "displayName": "firstExtension",
+  "name": "api",
+  "displayName": "api",
   "description": "",
   "version": "0.0.1",
   "engines": {
@@ -14,14 +14,14 @@
   "contributes": {
     "commands": [
       {
-        "command": "firstextension.search_stackoverflow",
+        "command": "api.checkAPIStatus",
         "title": "Search for API"
       }
     ],
     "menus": {
       "editor/context": [
         {
-          "command": "firstextension.search_stackoverflow",
+          "command": "api.checkAPIStatus",
           "when": "editorHasSelection",
           "group": "navigation"
         }

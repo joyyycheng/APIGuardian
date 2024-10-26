@@ -12,7 +12,7 @@ const { fetchApiResults } = require('./CheckAPI');
  * @param {vscode.ExtensionContext} context
  */
 function activate(context) {
-    let disposable = vscode.commands.registerCommand('firstextension.search_stackoverflow', async function () {
+    let disposable = vscode.commands.registerCommand('api.checkAPIStatus', async function () {
         const editor = vscode.window.activeTextEditor;
         if (editor) {
             const globPattern = '**/*.{js,py,cs}';
