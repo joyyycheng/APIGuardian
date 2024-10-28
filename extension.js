@@ -43,6 +43,7 @@ function activate(context) {
 
             // from here since the file name and line of code was added here, match the line and hover over the code to show the new url
             matchFileInfo(jsFile);
+            console.log("js: ", jsFile)
             let i = matchAPIs(jsFile, "js");
             const apiResults = await fetchApiResults(i);
             console.log("results: ", apiResults);

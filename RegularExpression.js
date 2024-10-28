@@ -53,10 +53,16 @@ function extractElements(codes, fileName, extension)
     
             // Check for existing keys in variables and create a unique key if needed
             while (variables.has(newKey)) {
-                newKey = `${key}_${count}`; // Append _1, _2, etc.
-                count++;
+                if(match[1] == undefined)
+                {
+                    variables.set(newKey, match[3])
+                    break;
+                } else
+                {
+                    newKey = `${key}_${count}`; // Append _1, _2, etc.
+                    count++;
+                }
             }
-    
             variables.set(newKey, match[3]); // Set the unique key in variables
     
             if (match[3].includes("https") || match[3].includes("http")) {

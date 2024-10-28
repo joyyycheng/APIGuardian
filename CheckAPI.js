@@ -5,8 +5,9 @@ async function fetchApiResults(fullURLS) {
 
     for (const [originalUrl, finalUrl] of fullURLS) {
         
-        const cleanUrl = finalUrl.replace(/^f|^'|'$|^`|`$/g, '').trim();
-        const cleanedUrl = cleanUrl.replace(/^'|'$/g, '').trim();
+        const cleanUrl = finalUrl.replace(/^f|^'|'$|^`|`$|^"|"$|"/g, '').trim();
+        const cleanedUrl = cleanUrl.replace(/^'|'$|^"|"$|"/g, '').trim();
+
         const encodedUrl = encodeURI(cleanedUrl);
 
         try {
