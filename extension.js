@@ -19,11 +19,12 @@ function activate(context) {
             const files = await vscode.workspace.findFiles(globPattern);
             const jsFile =[]
             const pyFile =[]
+            const csFile = []
             for (const file of files) {
                 const document = await vscode.workspace.openTextDocument(file);
                 const fileExtension = document.fileName.split('.').pop();
                 const fileContent = document.getText();
-                if (file.fsPath.includes('node_modules')|| file.fsPath.includes('vscode') || file.fsPath.includes('__pycache__')) {
+                if (file.fsPath.includes('node_modules')|| file.fsPath.includes('vscode') || file.fsPath.includes('__pycache__') || file.fsPath.includes('bin') || file.fsPath.includes('obj')) {
                     continue; // Skip this file
                 }
                 switch (fileExtension) {
@@ -35,26 +36,30 @@ function activate(context) {
                         const py = extractElements(fileContent, path.basename(document.fileName, path.extname(document.fileName)), fileExtension);
                         pyFile.push(py)
                         break;
+                    case "cs":
+                        const cs = extractElements(fileContent, path.basename(document.fileName, path.extname(document.fileName)), fileExtension);
+                        csFile.push(cs)
                     default:
                         vscode.window.showInformationMessage('No specific action for this file extension.');
                         break;
                 }
             }
 
+            console.log(csFile);
             // from here since the file name and line of code was added here, match the line and hover over the code to show the new url
-            matchFileInfo(jsFile);
-            console.log("js: ", jsFile)
-            let i = matchAPIs(jsFile, "js");
-            const apiResults = await fetchApiResults(i);
-            console.log("results: ", apiResults);
-            processFiles(jsFile, apiResults, "js", context);
+            // matchFileInfo(jsFile);
+            // console.log("js: ", jsFile)
+            // let i = matchAPIs(jsFile, "js");
+            // const apiResults = await fetchApiResults(i);
+            // console.log("results: ", apiResults);
+            // processFiles(jsFile, apiResults, "js", context);
             
-            matchFileInfo(pyFile);
-            console.log("py File: ", pyFile);
-            let p = matchAPIs(pyFile, "py");
-            const apiResults1 = await fetchApiResults(p);
-            console.log("results: ", apiResults1);
-            processFiles(pyFile, apiResults1, "py", context);
+            // matchFileInfo(pyFile);
+            // console.log("py File: ", pyFile);
+            // let p = matchAPIs(pyFile, "py");
+            // const apiResults1 = await fetchApiResults(p);
+            // console.log("results: ", apiResults1);
+            // processFiles(pyFile, apiResults1, "py", context);
         }
     });
 
