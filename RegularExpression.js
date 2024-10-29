@@ -17,8 +17,8 @@ function extractElements(codes, fileName, extension)
             importRegex = /^\s*(const)?\s*(\{([^}]+)\}|\w+)\s*=\s*(require\(\s*['"]([^'"]+)['"]\s*\)|import\s+\{([^}]+)\}\s*from\s*['"]([^'"]+)['"]\s*);?\s*$/gm;
             break;
         case "cs":
-            variableRegex = /^\s*(int|double|float|string|var|bool|char)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*=/gm;
-            functionRegex = /^\s*(public|private|protected|internal)?\s*(static)?\s*(void|int|double|string|bool)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(.*\)/gm;
+            variableRegex = /^\s*(int|double|float|string|var|bool|char)\s+([a-zA-Z_][a-zA-Z0-9]*)\s*=\s*(?:"(.*?)"|([-+]?\d*\.?\d+))\s*;?$/gm;
+            functionRegex = /^\s*(public|private|protected|internal)?\s*(static)?\s*(async)?\s*(void|int|double|string|bool|Task)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(([^)]*)\)\s*{?\s*$/gm;
             importRegex = /^\s*using\s+([a-zA-Z_][a-zA-Z0-9_.]*)\s*;/gm;
             break;
         default:
@@ -110,6 +110,37 @@ function extractElements(codes, fileName, extension)
     
                 apiLocations.set(apiNewKey, j); // Store the value in apiLocations
             }
+        } else if (extension == "cs")
+        { 
+            let type = match[1];
+            let key = match[2];
+            let newKey = key; // Start with the original key
+            let count = 1;
+
+            while (variables.has(newKey)) {
+                newKey = `${key}_${count}`; // Append _1, _2, etc.
+                count++;
+            }
+
+            variables.set(newKey, match[3]);
+
+            if (match[3].includes("https") || match[3].includes("http")) {
+                const j = match[0].replace(/^\n/, '').replace(/\r\n/g, '');
+    
+                // Check for duplicates in apiLocations
+                let apiKey = `${fileName}.${extension}`; // Use the original file key
+                let apiNewKey = apiKey; // Start with the original api key
+                count = 1;
+    
+                // Create a unique key if the apiLocations already contains it
+                while (apiLocations.has(apiNewKey)) {
+                    apiNewKey = `${apiKey}_${count}`; // Append _1, _2, etc.
+                    count++;
+                }
+    
+                apiLocations.set(apiNewKey, j); // Store the value in apiLocations
+            }
+
         }
     }
     
@@ -134,6 +165,9 @@ function extractElements(codes, fileName, extension)
         } else if (extension == "py")
         {
             functions.set(match[1], match[2]);
+        } else if(extension == "cs")
+        {
+            functions.set(match[5], match[6]);
         }
         
         
@@ -183,6 +217,9 @@ function extractElements(codes, fileName, extension)
             // You may want to adjust how you set the imports based on your existing logic
             // Assuming you want to store the module name as the key and the imported names as values
             imports.set(modulePath, importedNames);
+        } else if (extension == "cs")
+        {
+              
         }
     }
 
