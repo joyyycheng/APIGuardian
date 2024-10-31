@@ -7,14 +7,14 @@ function processFiles(fileData, apiData, fileType, context) {
 
     for (const fileMap of fileData) {
         for (const [fileName, fileData] of fileMap) {
+            const fileURL = fileData.filePath;
             if (fileData.apiLocations.size !== 0) {
                 for (const [key, value] of apiData) {
                     for (const [key1, value1] of fileData.apiLocations) {
                         if (value1.includes(key)) {
                             const cleanedKey = key1.replace(/(_\d+)$/, ''); 
 
-                            const filePath = vscode.workspace.workspaceFolders[0].uri.fsPath + '/' + cleanedKey;
-                            const fileUri = vscode.Uri.file(filePath);
+                            const fileUri = vscode.Uri.file(fileURL);
 
                             // Open the document and accumulate matches
                             const docPromise = vscode.workspace.openTextDocument(fileUri).then((d) => {

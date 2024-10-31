@@ -1,8 +1,9 @@
-function extractElements(codes, fileName, extension)
+function extractElements(codes, fileName, extension, filePath)
 {
     let variableRegex;
     let functionRegex;
     let importRegex;
+    let awaitRegex = '';
 
     switch(extension)
     {
@@ -17,9 +18,10 @@ function extractElements(codes, fileName, extension)
             importRegex = /^\s*(const)?\s*(\{([^}]+)\}|\w+)\s*=\s*(require\(\s*['"]([^'"]+)['"]\s*\)|import\s+\{([^}]+)\}\s*from\s*['"]([^'"]+)['"]\s*);?\s*$/gm;
             break;
         case "cs":
-            variableRegex = /^\s*(int|double|float|string|var|bool|char)\s+([a-zA-Z_][a-zA-Z0-9]*)\s*=\s*(?:"(.*?)"|([-+]?\d*\.?\d+))\s*;?$/gm;
+            variableRegex = /^(?:(?:\s*(public|private|protected)\s+)?(?:static\s+)?(?:readonly\s+)?)?\s*(int|double|float|string|var|bool|char)?\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.*?);?$/gm;
             functionRegex = /^\s*(public|private|protected|internal)?\s*(static)?\s*(async)?\s*(void|int|double|string|bool|Task)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(([^)]*)\)\s*{?\s*$/gm;
             importRegex = /^\s*using\s+([a-zA-Z_][a-zA-Z0-9_.]*)\s*;/gm;
+            awaitRegex = /await\s+([a-zA-Z0-9_.]+)\s*\((.*?)\);\s*/g;
             break;
         default:
             console.log("Unsupported file type: " + extension);
@@ -112,8 +114,7 @@ function extractElements(codes, fileName, extension)
             }
         } else if (extension == "cs")
         { 
-            let type = match[1];
-            let key = match[2];
+            let key = match[3];
             let newKey = key; // Start with the original key
             let count = 1;
 
@@ -122,9 +123,9 @@ function extractElements(codes, fileName, extension)
                 count++;
             }
 
-            variables.set(newKey, match[3]);
+            variables.set(newKey, match[4]);
 
-            if (match[3].includes("https") || match[3].includes("http")) {
+            if (match[4].includes("https") || match[4].includes("http")) {
                 const j = match[0].replace(/^\n/, '').replace(/\r\n/g, '');
     
                 // Check for duplicates in apiLocations
@@ -172,6 +173,28 @@ function extractElements(codes, fileName, extension)
         
         
     }
+    
+    if(awaitRegex != '')
+    {
+        while ((match = awaitRegex.exec(code)) !== null) {
+            if(extension == "cs")
+            {
+                const fullFunctionName = match[1];
+                const functionParts = fullFunctionName.split('.'); 
+            
+                const className = functionParts[0]; 
+                const methodName = functionParts[1]; 
+            
+                if (imports.has(className)) {
+                    imports.get(className).push(methodName);
+                } else {
+                    imports.set(className, [methodName]);
+                }
+            }
+        }
+    }
+
+
     // Find import statements
     while ((match = importRegex.exec(code)) !== null) {
         if(extension == "js")
@@ -228,14 +251,22 @@ function extractElements(codes, fileName, extension)
         const regex = new RegExp(`(?<!\\w)(${functionName})\\s*\\((.*?)\\)`, 'g');
         const calls = [];
         let match;
-
-        // Search for function calls using the regex
-        while ((match = regex.exec(code)) !== null) {
-            const args = match[2] ? match[2].split(',').map(arg => arg.trim()) : []; // Get arguments
-            calls.push(args); // Store the arguments for the call
+        if(extension == "cs")
+        {
+            while ((match = regex.exec(code)) !== null) {
+                const args = match[2] ? match[2].split(',').map(arg => arg.trim()) : []; // Get arguments
+        
+                const params = args.map(arg => arg.split(' ').slice(1).join(' ')).filter(param => param); // Get only the parameter names
+                calls.push(params); // Store the function name and parameter names
+            }
+        } else
+        {
+            while ((match = regex.exec(code)) !== null) {
+                const args = match[2] ? match[2].split(',').map(arg => arg.trim()) : []; // Get arguments
+                calls.push(args); // Store the arguments for the call
+            }
         }
 
-        // Store the calls in the results object
         if (calls.length > 0) {
             functionCalls.set(functionName, calls)
         }
@@ -299,6 +330,21 @@ function extractElements(codes, fileName, extension)
                 }
             }
             
+        } else if(extension == "cs")
+        {
+            for (let i = 0; i < params.length; i++) {
+                let param = params[i];  // Trim any leading/trailing whitespace
+            
+                if (param !== param.trim()) {
+                    param = param.trim(); // Trim if there is whitespace
+                }
+                const regex = new RegExp(`(?<!\\w)(${functionName}.${param})\\s*\\((.*?)\\)`, 'g'); // Separate regex for each param
+                let match;
+                while ((match = regex.exec(code)) !== null) {
+                    const args = match[2] ? match[2].split(',').map(arg => arg.trim()) : []; // Get arguments
+                    functionCalls.set(param, args);
+                }
+            }
         }
         
 
@@ -310,7 +356,8 @@ function extractElements(codes, fileName, extension)
         functions: functions,
         imports: imports,
         functionCalls: functionCalls, 
-        apiLocations: apiLocations
+        apiLocations: apiLocations,
+        filePath : filePath
     })
 
     return extractedData;

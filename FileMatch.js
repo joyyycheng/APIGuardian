@@ -37,7 +37,7 @@ function matchFileInfo(extractedData, fileNames) {
         }
     }
 
-    console.log(functionFound)
+    console.log("functionFound:", functionFound)
 
     for (const fileMap of extractedData) {
         for (const [fileName, fileData] of fileMap) {
@@ -51,8 +51,13 @@ function matchFileInfo(extractedData, fileNames) {
                         const splitParams = params.split(',').map(item => item.trim());
                         for (let i = 0; i < splitParams.length; i++) {
                             const calls = functionFound.get(functionName);
-                            let paramName = splitParams[i];
-    
+                            let paramName = '';
+                            if(splitParams[i].includes(' ')){
+                                paramName = splitParams[i].trim().split(' ')[1];
+                            } else
+                            {
+                                paramName = splitParams[i].trim();
+                            }
                             // Check for existing variable and create a unique name if necessary
                             let uniqueParamName = paramName;
                             let index = 1;
@@ -66,12 +71,19 @@ function matchFileInfo(extractedData, fileNames) {
                         }
                     } else {
                         const calls = functionFound.get(functionName);
-                        let uniqueParamName = params;
+                        let param = '';
+                        if(params.includes(' ')){
+                            param = params.trim().split(' ')[1];
+                        } else
+                        {
+                            param = params.trim();
+                        }
+                        let uniqueParamName = param;
     
                         // Check for existing variable and create a unique name if necessary
                         let index = 1;
                         while (variables.has(uniqueParamName)) {
-                            uniqueParamName = `${params}_${index}`; // Create unique variable name
+                            uniqueParamName = `${param}_${index}`; // Create unique variable name
                             index++;
                         }
     

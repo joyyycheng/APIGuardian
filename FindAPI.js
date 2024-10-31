@@ -49,6 +49,9 @@ function matchAPIs(extractedData, extension)
                     else if(extension == "py")
                     {
                         newURLS[i] = newURLS[i].replace(`\{${key}}`, value); // Create a new string with the replaced value
+                    } else if (extension == "cs")
+                    {
+                        newURLS[i] = newURLS[i].replace(`\{${key}}`, value);
                     }
                 }
                 APIurls.set(urls[i], newURLS[i]);

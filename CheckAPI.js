@@ -6,7 +6,8 @@ async function fetchApiResults(fullURLS) {
     for (const [originalUrl, finalUrl] of fullURLS) {
         const apiName = [];
         const cleanUrl = finalUrl.replace(/^f|^'|'$|^`|`$|^"|"$|"/g, '').trim();
-        const cleanedUrl = cleanUrl.replace(/^'|'$|^"|"$|"/g, '').trim();
+        const cleanedUrl = cleanUrl.replace(/^\$|^\$|^'|'$|^"|"$|"/g, '').trim();
+        
 
         const encodedUrl = encodeURI(cleanedUrl);
 
@@ -16,9 +17,9 @@ async function fetchApiResults(fullURLS) {
             if(response)
             {
                 const data = await response.json();
-                if(data.cod == 200)
+                if(data.cod == 200 || data.status == "success")
                 {
-                    const resultString = `${encodedUrl}  \nStatus: ${data.cod}`;
+                    const resultString = `${encodedUrl}  \nStatus: Success/200`;
                     results.set(originalUrl, resultString);
                 } else
                 {
@@ -40,35 +41,6 @@ async function fetchApiResults(fullURLS) {
     return results; // Return the results array
 }
 
-async function searchStackOverflow(query) {
-    const apiUrl = `https://api.stackexchange.com/2.3/search?order=desc&sort=activity&intitle=${encodeURIComponent(query)}&site=stackoverflow`;
-
-    try {
-        const response = await fetch(apiUrl);
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        
-        console.log("Stackoverflow:", data);
-        const results = data.items;
-
-        // Return relevant results
-        if (results && results.length > 0) {
-            return results.map(item => ({
-                title: item.title,
-                link: item.link,
-                score: item.score,
-            }));
-        } else {
-            return 'No results found.';
-        }
-    } catch (error) {
-        console.error('Error fetching data:', error);
-        return 'An error occurred while fetching data.';
-    }
-}
 
 async function searchGoogle(query) {
     const apiKey = 'AIzaSyD58BpSABrGS3CxTTvi_swiBPVN41A5zS8'; // Replace with your Google API key
