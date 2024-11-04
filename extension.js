@@ -15,11 +15,12 @@ function activate(context) {
     let disposable = vscode.commands.registerCommand('api.checkAPIStatus', async function () {
         const editor = vscode.window.activeTextEditor;
         if (editor) {
-            const globPattern = '**/*.{js,py,cs}';
+            const globPattern = '**/*.{js,py,cs,php}';
             const files = await vscode.workspace.findFiles(globPattern);
             const jsFile =[]
             const pyFile =[]
             const csFile = []
+            const phpFile = []
             for (const file of files) {
                 const document = await vscode.workspace.openTextDocument(file);
                 const fileExtension = document.fileName.split('.').pop();
@@ -39,6 +40,10 @@ function activate(context) {
                     case "cs":
                         const cs = extractElements(fileContent, path.basename(document.fileName, path.extname(document.fileName)), fileExtension, file.fsPath);
                         csFile.push(cs)
+                        break;
+                    case "php":
+                        const php = extractElements(fileContent, path.basename(document.fileName, path.extname(document.fileName)), fileExtension, file.fsPath);
+                        phpFile.push(php)
                         break;
                     default:
                         vscode.window.showInformationMessage('No specific action for this file extension.');
@@ -61,6 +66,12 @@ function activate(context) {
             let csResults = matchAPIs(csFile, "cs");
             let apiResults = await fetchApiResults(csResults);
             processFiles(csFile, apiResults, "cs", context);
+
+            matchFileInfo(phpFile);
+            console.log(phpFile)
+            let phpResults = matchAPIs(phpFile, "php");
+            let apiResults3 = await fetchApiResults(phpResults);
+            processFiles(phpFile, apiResults3, "php", context);
         }
     });
 

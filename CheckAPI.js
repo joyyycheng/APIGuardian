@@ -25,7 +25,7 @@ async function fetchApiResults(fullURLS) {
                 {
                     const baseUrl = encodedUrl.split("/")[2];
                     const GoogleResults = await searchGoogle(baseUrl + " " + data.message);
-                    const resultString = `${encodedUrl}  \nStatus: ${data.cod}  \nMessage: ${data.message}  \nRecommended Fix from: ${GoogleResults[0].displayLink}  \nTitle: ${GoogleResults[0].title}  \nLink: ${GoogleResults[0].link}`;
+                    const resultString = `${encodedUrl}  \nStatus: ${data.cod}  \nAPI Name: ${baseUrl}  \nMessage: ${data.message}  \nRecommended Fix from: ${GoogleResults[0].displayLink}  \nTitle: ${GoogleResults[0].title}  \nLink: ${GoogleResults[0].link}`;
                     results.set(originalUrl, resultString);
                 }
                 

@@ -23,6 +23,12 @@ function extractElements(codes, fileName, extension, filePath)
             importRegex = /^\s*using\s+([a-zA-Z_][a-zA-Z0-9_.]*)\s*;/gm;
             awaitRegex = /await\s+([a-zA-Z0-9_.]+)\s*\((.*?)\);\s*/g;
             break;
+            case "php":
+                variableRegex = /^\s*(public|private|protected)?\s*(static\s+)?\$(\w+)\s*=\s*(.*?);?$/gm;
+                functionRegex = /^\s*(public|private|protected)?\s*(static\s+)?function\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\((.*?)\)\s*{/gm;
+                importRegex = /\b([a-zA-Z_][a-zA-Z0-9_]*)::([a-zA-Z_][a-zA-Z0-9_]*)\((.*?)\);/gm;
+                break;
+            
         default:
             console.log("Unsupported file type: " + extension);
             return;
@@ -141,7 +147,35 @@ function extractElements(codes, fileName, extension, filePath)
     
                 apiLocations.set(apiNewKey, j); // Store the value in apiLocations
             }
+        } else if(extension == "php")
+        {
+            let key = `$${match[3]}`;
+            let newKey = key; // Start with the original key
+            let count = 1;
 
+            while (variables.has(newKey)) {
+                newKey = `${key}_${count}`; // Append _1, _2, etc.
+                count++;
+            }
+
+            variables.set(newKey, match[4]);
+
+            if (match[4].includes("https") || match[4].includes("http")) {
+                const j = match[0].replace(/^\n/, '').replace(/\r\n/g, '');
+    
+                // Check for duplicates in apiLocations
+                let apiKey = `${fileName}.${extension}`; // Use the original file key
+                let apiNewKey = apiKey; // Start with the original api key
+                count = 1;
+    
+                // Create a unique key if the apiLocations already contains it
+                while (apiLocations.has(apiNewKey)) {
+                    apiNewKey = `${apiKey}_${count}`; // Append _1, _2, etc.
+                    count++;
+                }
+    
+                apiLocations.set(apiNewKey, j); // Store the value in apiLocations
+            }
         }
     }
     
@@ -169,9 +203,10 @@ function extractElements(codes, fileName, extension, filePath)
         } else if(extension == "cs")
         {
             functions.set(match[5], match[6]);
+        } else if(extension == "php")
+        {
+            functions.set(match[3], match[4]);
         }
-        
-        
     }
     
     if(awaitRegex != '')
@@ -240,9 +275,16 @@ function extractElements(codes, fileName, extension, filePath)
             // You may want to adjust how you set the imports based on your existing logic
             // Assuming you want to store the module name as the key and the imported names as values
             imports.set(modulePath, importedNames);
-        } else if (extension == "cs")
+        } else if (extension == "php")
         {
-              
+            let key = match[1];
+            let newKey = key; // Start with the original key
+            let count = 1;
+            while (imports.has(newKey)) {
+                newKey = `${key}_${count}`; // Append _1, _2, etc.
+                count++;
+            }
+            imports.set(newKey, match[2]);
         }
     }
 
@@ -259,7 +301,14 @@ function extractElements(codes, fileName, extension, filePath)
                 const params = args.map(arg => arg.split(' ').slice(1).join(' ')).filter(param => param); // Get only the parameter names
                 calls.push(params); // Store the function name and parameter names
             }
-        } else
+        } else if(extension == "php")
+        {
+            while ((match = regex.exec(code)) !== null) {
+                const args = match[2] ? match[2].split(',').map(arg => arg.trim().replace(/^\$/, '')) : []; // Get arguments
+                calls.push(args); // Store the arguments for the call
+            }
+        }
+        else
         {
             while ((match = regex.exec(code)) !== null) {
                 const args = match[2] ? match[2].split(',').map(arg => arg.trim()) : []; // Get arguments
@@ -268,7 +317,22 @@ function extractElements(codes, fileName, extension, filePath)
         }
 
         if (calls.length > 0) {
-            functionCalls.set(functionName, calls)
+            let key = functionName;
+            let newKey = key; // Start with the original key
+            let count = 1;
+
+            while (functionCalls.has(newKey)) {
+                if(match[1] == undefined)
+                {
+                    functionCalls.set(newKey, calls)
+                    break;
+                } else
+                {
+                    newKey = `${key}_${count}`; 
+                    count++;
+                }
+            }
+            functionCalls.set(newKey,calls); // Set the unique key in variables
         }
     });
 
@@ -344,6 +408,13 @@ function extractElements(codes, fileName, extension, filePath)
                     const args = match[2] ? match[2].split(',').map(arg => arg.trim()) : []; // Get arguments
                     functionCalls.set(param, args);
                 }
+            }
+        } else if (extension == "php")
+        {
+            let match;
+            while ((match = importRegex.exec(code)) !== null) {
+                const args = match[3] ? match[3].split(',').map(arg => arg.trim()) : []; // Get arguments
+                functionCalls.set(match[2], args);
             }
         }
         

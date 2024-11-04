@@ -1,6 +1,7 @@
 function matchAPIs(extractedData, extension)
 {
-    const variableRegex = /\{(.*?)}/g;
+    const variableRegex = /\{(.*?)\}|\.?\s*self::\$(\w+)\s*\./g;
+    
     let match;
     const variableNames = [];
     const urls = [];
@@ -12,18 +13,28 @@ function matchAPIs(extractedData, extension)
                 if (value.includes("https") || value.includes("http")) {
                     urls.push(value);
                     while ((match = variableRegex.exec(value)) !== null) {
-                        let variableName = match[1];
+                        const curlyVariable = match[1]; // For {variable}
+                        const selfVariable = match[2]; // For self::$variable
+
+                        let newVariableName = curlyVariable || selfVariable; // Get the variable name
                         let suffixIndex = 1;
-                        let newVariableName = variableName;
-                    
+
+                        // If it's a self variable, prepend the dollar sign
+                        if (selfVariable) {
+                            newVariableName = `$${selfVariable}`;
+                        } else if (curlyVariable) {
+                            newVariableName = `${curlyVariable}`;
+                        }
+
+                        // Ensure the variable name is unique
                         while (variableNames.includes(newVariableName)) {
-                            newVariableName = `${variableName}_${suffixIndex}`; 
+                            newVariableName = `${newVariableName}_${suffixIndex}`; // Append suffix
                             suffixIndex++;
                         }
-                        variableNames.push(newVariableName); 
+
+                        variableNames.push(newVariableName); // Add to the list
                     }
-                    
-                    
+
                     variableValues = new Map(
                         variableNames.map(variable => {
                             let value = fileData.variables.get(variable);
@@ -52,6 +63,15 @@ function matchAPIs(extractedData, extension)
                     } else if (extension == "cs")
                     {
                         newURLS[i] = newURLS[i].replace(`\{${key}}`, value);
+                    } else if (extension == "php")
+                    {
+                        const regex = /\ . self::/;  
+                        if(regex.test(newURLS[i]))
+                        {
+                            newURLS[i] = newURLS[i].replace(`\ . self::${key} . `, value); // Replace self::$key with value
+                        } 
+                        newURLS[i] = newURLS[i].replace(`\{${key}}`, value); // Create a new string with the replaced value
+
                     }
                 }
                 APIurls.set(urls[i], newURLS[i]);

@@ -1,7 +1,16 @@
 const vscode = require('vscode');
 const hoverProviders = new Map(); // Store hover providers per document URI
 
+function clearHoverProviders(context) {
+    for (const hoverProvider of hoverProviders.values()) {
+        hoverProvider.dispose(); // Dispose of the hover provider
+    }
+    hoverProviders.clear(); // Clear the map
+}
+
 function processFiles(fileData, apiData, fileType, context) {
+    clearHoverProviders(context);
+    
     const matches = []; // Store matches to highlight later
     const documentPromises = []; // To accumulate promises for opening documents
 
@@ -12,7 +21,6 @@ function processFiles(fileData, apiData, fileType, context) {
                 for (const [key, value] of apiData) {
                     for (const [key1, value1] of fileData.apiLocations) {
                         if (value1.includes(key)) {
-                            const cleanedKey = key1.replace(/(_\d+)$/, ''); 
 
                             const fileUri = vscode.Uri.file(fileURL);
 
@@ -90,6 +98,8 @@ function highlightMatchesInFile(matches, context) {
         hoverProviders.set(documentUri, hoverProvider);
         context.subscriptions.push(hoverProvider);
     }
+
+    
 }
 
 module.exports = { processFiles };
