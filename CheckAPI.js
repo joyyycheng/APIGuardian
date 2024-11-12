@@ -1,4 +1,6 @@
 const axios = require('axios');
+const vscode = require('vscode');
+
 
 async function fetchApiResults(fullURLS) {
     const results = new Map();
@@ -12,21 +14,43 @@ async function fetchApiResults(fullURLS) {
         const encodedUrl = encodeURI(cleanedUrl);
 
         try {
-            console.log(encodedUrl);
             const response = await fetch(encodedUrl); // Fetch data from the final URL
             if(response)
             {
                 const data = await response.json();
                 if(data.cod == 200 || data.status == "success")
                 {
-                    const resultString = `${encodedUrl}  \nStatus: Success/200`;
-                    results.set(originalUrl, resultString);
+                    const markdownString = new vscode.MarkdownString();
+                    markdownString.supportHtml = true; 
+                    markdownString.appendMarkdown(`**API Response Details for**: ${encodedUrl}\n`);
+                    markdownString.appendText('\n');
+                    markdownString.appendMarkdown(`**Status**: <span style="color:var(--vscode-charts-green);">Success/200</span>\n`);
+                    markdownString.appendText('\n');
+                    results.set(originalUrl, markdownString);
                 } else
                 {
                     const baseUrl = encodedUrl.split("/")[2];
                     const GoogleResults = await searchGoogle(baseUrl + " " + data.message);
-                    const resultString = `${encodedUrl}  \nStatus: ${data.cod}  \nAPI Name: ${baseUrl}  \nMessage: ${data.message}  \nRecommended Fix from: ${GoogleResults[0].displayLink}  \nTitle: ${GoogleResults[0].title}  \nLink: ${GoogleResults[0].link}`;
-                    results.set(originalUrl, resultString);
+                    const GoogleResults_OfficialDocumentation = await searchGoogle("Search for Official API Documentation for " + baseUrl);
+                    const markdownString = new vscode.MarkdownString();
+                    markdownString.supportHtml = true; 
+                    markdownString.appendMarkdown(`**API Response Details for**: ${encodedUrl}\n`);
+                    markdownString.appendText('\n');
+                    markdownString.appendMarkdown(`**Status**: <span style="color:var(--vscode-charts-red);">${data.cod}</span>\n`);
+                    markdownString.appendText('\n');
+                    markdownString.appendMarkdown(`**API Name**: ${baseUrl}\n`);
+                    markdownString.appendText('\n');
+                    markdownString.appendMarkdown(`**Official API Link**: [Link](${GoogleResults_OfficialDocumentation[0].link})\n`);
+                    markdownString.appendText('\n');
+                    markdownString.appendMarkdown(`**Message**: ${data.message}\n`);
+                    markdownString.appendText('\n');
+                    markdownString.appendMarkdown(`**Recommended Fix (from ${GoogleResults[0].displayLink})**:\n`);
+                    markdownString.appendText('\n');
+                    markdownString.appendMarkdown(`**Title**: ${GoogleResults[0].title}\n`);
+                    markdownString.appendText('\n');
+                    markdownString.appendMarkdown(`**Link**: [${GoogleResults[0].link}](${GoogleResults[0].link})\n`);
+                    
+                    results.set(originalUrl, markdownString);
                 }
                 
             }

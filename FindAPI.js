@@ -49,7 +49,6 @@ function matchAPIs(extractedData, extension)
             }
 
             let newURLS = processUrls(urls, extension);
-            console.log("variable values: ", variableValues);
             
             for(let i = 0; i < newURLS.length; i++){
                 for (const [key, value] of variableValues) {

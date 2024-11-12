@@ -37,7 +37,6 @@ function matchFileInfo(extractedData, fileNames) {
         }
     }
 
-    console.log("functionFound:", functionFound)
 
     for (const fileMap of extractedData) {
         for (const [fileName, fileData] of fileMap) {

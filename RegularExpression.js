@@ -1,9 +1,11 @@
+
 function extractElements(codes, fileName, extension, filePath)
 {
     let variableRegex;
     let functionRegex;
     let importRegex;
     let awaitRegex = '';
+    let typeRegex = '';
 
     switch(extension)
     {
@@ -16,6 +18,7 @@ function extractElements(codes, fileName, extension, filePath)
             variableRegex = /^\s*(const|let|var)?\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.*?);?$/gm;
             functionRegex = /^\s*(async\s+)?(function\s+([a-zA-Z_][a-zA-Z0-9_]*)|\(?\s*([a-zA-Z_][a-zA-Z0-9_]*)?\s*\)?\s*=>)\s*\((.*?)\)/gm;
             importRegex = /^\s*(const)?\s*(\{([^}]+)\}|\w+)\s*=\s*(require\(\s*['"]([^'"]+)['"]\s*\)|import\s+\{([^}]+)\}\s*from\s*['"]([^'"]+)['"]\s*);?\s*$/gm;
+            typeRegex = /fetch\s*\(\s*([^)]+?)\s*\)/g;
             break;
         case "cs":
             variableRegex = /^(?:(?:\s*(public|private|protected)\s+)?(?:static\s+)?(?:readonly\s+)?)?\s*(int|double|float|string|var|bool|char)?\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.*?);?$/gm;
@@ -23,11 +26,11 @@ function extractElements(codes, fileName, extension, filePath)
             importRegex = /^\s*using\s+([a-zA-Z_][a-zA-Z0-9_.]*)\s*;/gm;
             awaitRegex = /await\s+([a-zA-Z0-9_.]+)\s*\((.*?)\);\s*/g;
             break;
-            case "php":
-                variableRegex = /^\s*(public|private|protected)?\s*(static\s+)?\$(\w+)\s*=\s*(.*?);?$/gm;
-                functionRegex = /^\s*(public|private|protected)?\s*(static\s+)?function\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\((.*?)\)\s*{/gm;
-                importRegex = /\b([a-zA-Z_][a-zA-Z0-9_]*)::([a-zA-Z_][a-zA-Z0-9_]*)\((.*?)\);/gm;
-                break;
+        case "php":
+            variableRegex = /^\s*(public|private|protected)?\s*(static\s+)?\$(\w+)\s*=\s*(.*?);?$/gm;
+            functionRegex = /^\s*(public|private|protected)?\s*(static\s+)?function\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\((.*?)\)\s*{/gm;
+            importRegex = /\b([a-zA-Z_][a-zA-Z0-9_]*)::([a-zA-Z_][a-zA-Z0-9_]*)\((.*?)\);/gm;
+            break;
             
         default:
             console.log("Unsupported file type: " + extension);
@@ -41,6 +44,7 @@ function extractElements(codes, fileName, extension, filePath)
     const functionCalls = new Map();
     const extractedData = new Map();
     const apiLocations = new Map();
+    const types = new Map();
 
     let match;
 
@@ -51,7 +55,10 @@ function extractElements(codes, fileName, extension, filePath)
         }
         return ''; // remove the comment otherwise
     });
-
+    if(extension == "js")
+    {
+        
+    }
 
     while ((match = variableRegex.exec(code)) !== null) {
         if (extension == "js") {
@@ -88,6 +95,33 @@ function extractElements(codes, fileName, extension, filePath)
                 }
     
                 apiLocations.set(apiNewKey, i); // Store the value in apiLocations
+
+                let isPostFound = false;
+
+                while ((match = typeRegex.exec(codes)) !== null) {
+                    const fetchArgs = match[1].trim();
+                    
+                    // Split based on commas to separate URL and options
+                    let args = fetchArgs.split(',');
+
+                    // Trim whitespace from each argument
+                    args = args.map(arg => arg.trim());
+
+                    // Check the number of arguments
+                    if (args.length > 1) {
+                        // If there are more than 1 argument, it's a POST request (URL + options)
+                        types.set(newKey, 'POST');
+                        isPostFound = true;
+                    } else {
+                        // If there is only 1 argument, it's a GET request (only URL)
+                        types.set(newKey, 'GET');
+                    }
+                }
+
+                // If no fetch call was found, set the type to GET by default
+                if (!isPostFound) {
+                    types.set(newKey, 'GET');
+                }
             }
         } else if (extension == "py") {
             let key = match[1];
@@ -423,6 +457,7 @@ function extractElements(codes, fileName, extension, filePath)
 
     extractedData.set(fileName, {
         name: fileName,
+        type: types,
         variables: variables,
         functions: functions,
         imports: imports,

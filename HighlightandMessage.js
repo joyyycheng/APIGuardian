@@ -1,15 +1,14 @@
 const vscode = require('vscode');
-const hoverProviders = new Map(); // Store hover providers per document URI
 
-function clearHoverProviders(context) {
+
+function clearHoverProviders(hoverProviders) {
     for (const hoverProvider of hoverProviders.values()) {
         hoverProvider.dispose(); // Dispose of the hover provider
     }
     hoverProviders.clear(); // Clear the map
 }
 
-function processFiles(fileData, apiData, fileType, context) {
-    clearHoverProviders(context);
+function processFiles(fileData, apiData, fileType, context, hoverProviders) {
     
     const matches = []; // Store matches to highlight later
     const documentPromises = []; // To accumulate promises for opening documents
@@ -41,20 +40,16 @@ function processFiles(fileData, apiData, fileType, context) {
 
     Promise.all(documentPromises).then(() => {
         if (matches.length > 0) {
-            highlightMatchesInFile(matches, context);
+            highlightMatchesInFile(matches, context, hoverProviders);
         }
     });
 }
 
-function highlightMatchesInFile(matches, context) {
+function highlightMatchesInFile(matches, context, hoverProviders) {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
         return; // No editor is active
     }
-
-    const decorationType = vscode.window.createTextEditorDecorationType({
-        backgroundColor: '#FFFFE0',
-    });
 
     const ranges = []; // Store all ranges to highlight
     const hoverData = new Map(); // To store hover text based on range
