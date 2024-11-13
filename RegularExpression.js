@@ -65,20 +65,36 @@ function extractElements(codes, fileName, extension, filePath)
             let key = match[2];
             let newKey = key; // Start with the original key
             let count = 1;
+            let value = match[3].trim()
     
             // Check for existing keys in variables and create a unique key if needed
             while (variables.has(newKey)) {
-                if(match[1] == undefined)
-                {
-                    variables.set(newKey, match[3])
-                    break;
-                } else
-                {
-                    newKey = `${key}_${count}`; // Append _1, _2, etc.
-                    count++;
-                }
+                newKey = `${key}_${count}`; // Append _1, _2, etc.
+                count++;
             }
-            variables.set(newKey, match[3]); // Set the unique key in variables
+            
+            if (value.startsWith("{") || value.startsWith("[")) {
+                let block = value;  // Initialize with the value (object or array)
+                let braceCount = 0;
+                let index = variableRegex.lastIndex;  // Start reading after current match
+    
+                // Look ahead and capture everything inside the braces
+                for (let i = index; i < code.length; i++) {
+                    let char = code[i];
+                    block += char;  // Add character to block
+    
+                    if (char === "{") braceCount++;
+                    if (char === "}") braceCount--;
+    
+                    // If brace count is balanced, break out
+                    if (braceCount === 0) break;
+                }
+    
+                value = block;  // Set the entire object/array block as the value
+            }
+        
+                // Store the variable name and its value in the variables map
+            variables.set(newKey, value);
     
             if (match[3].includes("https") || match[3].includes("http")) {
                 const i = match[0].replace(/^\n/, '').replace(/\r\n/g, '');
