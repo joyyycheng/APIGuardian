@@ -2,68 +2,108 @@ const axios = require('axios');
 const vscode = require('vscode');
 
 
-async function fetchApiResults(fullURLS) {
+async function fetchApiResults(fullURLS, extractedData) {
     const results = new Map();
 
     for (const [originalUrl, finalUrl] of fullURLS) {
-        const apiName = [];
-        const cleanUrl = finalUrl.replace(/^f|^'|'$|^`|`$|^"|"$|"/g, '').trim();
-        const cleanedUrl = cleanUrl.replace(/^\$|^\$|^'|'$|^"|"$|"/g, '').trim();
-        
+        for (let i = 0; i < extractedData.length; i++) {
+            for (const [fileName, fileData] of extractedData[i]) {
+                for (const [varKey, varValue] of fileData.variables) {
+                    if (varValue === originalUrl) {
 
-        const encodedUrl = encodeURI(cleanedUrl);
+                        let requestType = '';
+                        for (const [typeKey, typeValue] of fileData.type) {
+                            if (typeKey === varKey) {
+                                requestType = typeValue;
+                                break;
+                            }
+                        }
 
-        try {
-            const response = await fetch(encodedUrl); // Fetch data from the final URL
-            if(response)
-            {
-                const data = await response.json();
-                if(data.cod == 200 || data.status == "success")
-                {
-                    const markdownString = new vscode.MarkdownString();
-                    markdownString.supportHtml = true; 
-                    markdownString.appendMarkdown(`**API Response Details for**: ${encodedUrl}\n`);
-                    markdownString.appendText('\n');
-                    markdownString.appendMarkdown(`**Status**: <span style="color:var(--vscode-charts-green);">Success/200</span>\n`);
-                    markdownString.appendText('\n');
-                    results.set(originalUrl, markdownString);
-                } else
-                {
-                    const baseUrl = encodedUrl.split("/")[2];
-                    const GoogleResults = await searchGoogle(baseUrl + " " + data.message);
-                    const GoogleResults_OfficialDocumentation = await searchGoogle("Search for Official API Documentation for " + baseUrl);
-                    const markdownString = new vscode.MarkdownString();
-                    markdownString.supportHtml = true; 
-                    markdownString.appendMarkdown(`**API Response Details for**: ${encodedUrl}\n`);
-                    markdownString.appendText('\n');
-                    markdownString.appendMarkdown(`**Status**: <span style="color:var(--vscode-charts-red);">${data.cod}</span>\n`);
-                    markdownString.appendText('\n');
-                    markdownString.appendMarkdown(`**API Name**: ${baseUrl}\n`);
-                    markdownString.appendText('\n');
-                    markdownString.appendMarkdown(`**Official API Link**: [Link](${GoogleResults_OfficialDocumentation[0].link})\n`);
-                    markdownString.appendText('\n');
-                    markdownString.appendMarkdown(`**Message**: ${data.message}\n`);
-                    markdownString.appendText('\n');
-                    markdownString.appendMarkdown(`**Recommended Fix (from ${GoogleResults[0].displayLink})**:\n`);
-                    markdownString.appendText('\n');
-                    markdownString.appendMarkdown(`**Title**: ${GoogleResults[0].title}\n`);
-                    markdownString.appendText('\n');
-                    markdownString.appendMarkdown(`**Link**: [${GoogleResults[0].link}](${GoogleResults[0].link})\n`);
-                    
-                    results.set(originalUrl, markdownString);
+                        let callValue = '';
+                        for (const [callKey, callValueCandidate] of fileData.calls) {
+                            if (callKey === varKey) {
+                                callValue = callValueCandidate;
+                                break;
+                            }
+                        }
+
+                        // Step 2: Parse callValue to find fetch parameters (url and options)
+                        let urlParam = '';
+                        let optionsParam = '';
+                        const fetchMatch = /fetch\(([^,]+)(?:,([^)]*))?\)/.exec(callValue);
+                        if (fetchMatch) {
+                            optionsParam = fetchMatch[2]?.trim();
+                        }
+
+                        // Step 3: Look up values of urlParam and optionsParam in variables
+                        const urlVariable =  finalUrl;
+                        const optionsVariable = optionsParam ? fileData.variables.get(optionsParam) : undefined;
+                        let transformedOptionsString = '';
+                        if(optionsVariable != undefined)
+                        {
+                            transformedOptionsString = optionsVariable
+                            .replace(/(\r\n|\r|\n)/g, '')              // Remove any line breaks for easier parsing
+                            .replace(/([{,]\s*)(\w+):/g, '$1"$2":')    // Add double quotes around the keys to make it valid JSON
+                            .replace(/JSON\.stringify\((.*?)\)/g, (match, p1) => {
+                                const dataVariable = fileData.variables.get(p1.trim());
+                                return JSON.stringify(dataVariable); // Replace with actual data object as JSON
+                            });
+                        }
+                        
+
+                        // Clean up the URL value for the request
+                        const cleanUrl = urlVariable.replace(/^f|^'|'$|^`|`$|^"|"$|"/g, '').trim();
+                        const encodedUrl = encodeURI(cleanUrl);
+
+                        try {
+                            let response = '';
+
+                            // Perform GET or POST based on the request type
+                            if (requestType === "GET") {
+                                response = await fetch(encodedUrl);
+                            } else if (requestType === "POST") {
+                                const options = JSON.parse(transformedOptionsString);
+                                response = await fetch(encodedUrl, options);
+                            }
+
+                            if (response) {
+                                const data = await response.json();
+                                const markdownString = new vscode.MarkdownString();
+                                markdownString.supportHtml = true;
+                                markdownString.appendMarkdown(`**API Response Details for**: ${encodedUrl}\n\n`);
+
+                                if (data.cod === 200 || data.status === "success" || data.success == "true") {
+                                    markdownString.appendMarkdown(`**Status**: <span style="color:var(--vscode-charts-green);">Success/200</span>\n\n`);
+                                    results.set(originalUrl, markdownString);
+                                } else {
+                                    const baseUrl = encodedUrl.split("/")[2];
+                                    const GoogleResults = await searchGoogle(baseUrl + " " + data.message);
+                                    const GoogleResults_OfficialDocumentation = await searchGoogle("Search for Official API Documentation for " + baseUrl);
+                                    
+                                    markdownString.appendMarkdown(`**Status**: <span style="color:var(--vscode-charts-red);">${data.cod}</span>\n\n`);
+                                    markdownString.appendMarkdown(`**API Name**: ${baseUrl}\n\n`);
+                                    markdownString.appendMarkdown(`**Official API Link**: [Link](${GoogleResults_OfficialDocumentation[0].link})\n\n`);
+                                    markdownString.appendMarkdown(`**Message**: ${data.message}\n\n`);
+                                    markdownString.appendMarkdown(`**Recommended Fix (from ${GoogleResults[0].displayLink})**:\n\n`);
+                                    markdownString.appendMarkdown(`**Title**: ${GoogleResults[0].title}\n\n`);
+                                    markdownString.appendMarkdown(`**Link**: [${GoogleResults[0].link}](${GoogleResults[0].link})\n\n`);
+                                    
+                                    results.set(originalUrl, markdownString);
+                                }
+                            }
+                        } catch (error) {
+                            console.error("Fetch error:", error.message);
+                            results.set(originalUrl, encodedUrl + ": " + error.message);
+                        }
+                    }
                 }
-                
             }
-        } catch (error) {
-            // searchGoogle(encodedUrl + ": " + error.message).then(results => {
-            //     console.log("google: ", results);
-            // });
-            results.set(originalUrl, encodedUrl + ": " + error.message);
         }
     }
 
-    return results; // Return the results array
+    return results;
 }
+
 
 
 async function searchGoogle(query) {

@@ -45,6 +45,7 @@ function extractElements(codes, fileName, extension, filePath)
     const extractedData = new Map();
     const apiLocations = new Map();
     const types = new Map();
+    const calls = new Map();
 
     let match;
 
@@ -74,20 +75,23 @@ function extractElements(codes, fileName, extension, filePath)
             }
             
             if (value.startsWith("{") || value.startsWith("[")) {
-                let block = value;  // Initialize with the value (object or array)
+                let block = value;  // Start with the current match value
                 let braceCount = 0;
-                let index = variableRegex.lastIndex;  // Start reading after current match
     
-                // Look ahead and capture everything inside the braces
-                for (let i = index; i < code.length; i++) {
-                    let char = code[i];
-                    block += char;  // Add character to block
+                // Initialize brace count based on initial braces in value
+                for (let char of value) {
+                    if (char === "{") braceCount++;
+                    if (char === "}") braceCount--;
+                }
+    
+                // Capture additional characters until braces are balanced
+                let index = variableRegex.lastIndex;
+                while (braceCount !== 0 && index < code.length) {
+                    let char = code[index++];
+                    block += char;
     
                     if (char === "{") braceCount++;
                     if (char === "}") braceCount--;
-    
-                    // If brace count is balanced, break out
-                    if (braceCount === 0) break;
                 }
     
                 value = block;  // Set the entire object/array block as the value
@@ -127,6 +131,7 @@ function extractElements(codes, fileName, extension, filePath)
                     if (args.length > 1) {
                         // If there are more than 1 argument, it's a POST request (URL + options)
                         types.set(newKey, 'POST');
+                        calls.set(newKey, match[0]);
                         isPostFound = true;
                     } else {
                         // If there is only 1 argument, it's a GET request (only URL)
@@ -474,6 +479,7 @@ function extractElements(codes, fileName, extension, filePath)
     extractedData.set(fileName, {
         name: fileName,
         type: types,
+        calls: calls, 
         variables: variables,
         functions: functions,
         imports: imports,

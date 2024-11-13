@@ -65,7 +65,7 @@ function activate(context) {
             try {
                 matchFileInfo(jsFile);
                 let jsResults = matchAPIs(jsFile, "js");
-                let apiResults1 = await fetchApiResults(jsResults);
+                let apiResults1 = await fetchApiResults(jsResults, jsFile);
                 processFiles(jsFile, apiResults1, "js", context, hoverProviders);
             } catch (error) {
                 console.error("Error processing JS files:", error);
