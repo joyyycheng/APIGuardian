@@ -65,20 +65,19 @@ function activate(context) {
             try {
                 matchFileInfo(jsFile);
                 let jsResults = matchAPIs(jsFile, "js");
-                let apiResults1 = await fetchApiResults(jsResults, jsFile);
+                let apiResults1 = await fetchApiResults(jsResults, jsFile, "js");
                 processFiles(jsFile, apiResults1, "js", context, hoverProviders);
             } catch (error) {
                 console.error("Error processing JS files:", error);
             }
-            console.log("JS Files:", jsFile);
-            // try {
-            //     matchFileInfo(pyFile);
-            //     let pyResults = matchAPIs(pyFile, "py");
-            //     let apiResults2 = await fetchApiResults(pyResults);
-            //     processFiles(pyFile, apiResults2, "py", context, hoverProviders);
-            // } catch (error) {
-            //     console.error("Error processing PY files:", error);
-            // }
+            try {
+                matchFileInfo(pyFile);
+                let pyResults = matchAPIs(pyFile, "py");
+                let apiResults2 = await fetchApiResults(pyResults, pyFile, "py");
+                processFiles(pyFile, apiResults2, "py", context, hoverProviders);
+            } catch (error) {
+                console.error("Error processing PY files:", error);
+            }
 
             // try {
             //     matchFileInfo(csFile);

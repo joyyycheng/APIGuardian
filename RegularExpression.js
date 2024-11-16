@@ -13,6 +13,7 @@ function extractElements(codes, fileName, extension, filePath)
             variableRegex = /^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.+)$/gm;
             functionRegex = /^\s*def\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\((.*?)\)\s*:/gm;
             importRegex = /^\s*(import|from)\s+([a-zA-Z_][a-zA-Z0-9_.]*)\s*(?:import\s+([a-zA-Z_][a-zA-Z0-9_,\s]*))?\s*$/gm;
+            typeRegex = /\.post\(([\s\S]*?)\)/g;
             break;
         case "js":
             variableRegex = /^\s*(const|let|var)?\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.*?);?$/gm;
@@ -56,10 +57,6 @@ function extractElements(codes, fileName, extension, filePath)
         }
         return ''; // remove the comment otherwise
     });
-    if(extension == "js")
-    {
-        
-    }
 
     while ((match = variableRegex.exec(code)) !== null) {
         if (extension == "js") {
@@ -148,14 +145,38 @@ function extractElements(codes, fileName, extension, filePath)
             let key = match[1];
             let newKey = key; // Start with the original key
             let count = 1;
+            let value = match[2].trim()
     
             // Check for existing keys in variables and create a unique key if needed
             while (variables.has(newKey)) {
                 newKey = `${key}_${count}`; // Append _1, _2, etc.
                 count++;
             }
+
+            if (value.includes("{") || value.includes("[")) {
+                let block = value;  // Start with the current match value
+                let braceCount = 0;
     
-            variables.set(newKey, match[2]); // Set the unique key in variables
+                // Initialize brace count based on initial braces in value
+                for (let char of value) {
+                    if (char === "{") braceCount++;
+                    if (char === "}") braceCount--;
+                }
+    
+                // Capture additional characters until braces are balanced
+                let index = variableRegex.lastIndex;
+                while (braceCount !== 0 && index < code.length) {
+                    let char = code[index++];
+                    block += char;
+    
+                    if (char === "{") braceCount++;
+                    if (char === "}") braceCount--;
+                }
+    
+                value = block;  // Set the entire object/array block as the value
+            }
+    
+            variables.set(newKey, value); // Set the unique key in variables
     
             if (match[2].includes("https") || match[2].includes("http")) {
                 const j = match[0].replace(/^\n/, '').replace(/\r\n/g, '');
@@ -170,7 +191,33 @@ function extractElements(codes, fileName, extension, filePath)
                     apiNewKey = `${apiKey}_${count}`; // Append _1, _2, etc.
                     count++;
                 }
-    
+                let isPostFound = false;
+
+                while ((match = typeRegex.exec(codes)) !== null) {
+                    const fetchArgs = match["input"].trim();
+                    
+                    // Split based on commas to separate URL and options
+                    let args = fetchArgs.split(',');
+
+                    // Trim whitespace from each argument
+                    args = args.map(arg => arg.trim());
+
+                    // Check the number of arguments
+                    if (args.length > 1) {
+                        // If there are more than 1 argument, it's a POST request (URL + options)
+                        types.set(newKey, 'POST');
+                        calls.set(newKey, match[1]);
+                        isPostFound = true;
+                    } else {
+                        // If there is only 1 argument, it's a GET request (only URL)
+                        types.set(newKey, 'GET');
+                    }
+                }
+
+                // If no fetch call was found, set the type to GET by default
+                if (!isPostFound) {
+                    types.set(newKey, 'GET');
+                }
                 apiLocations.set(apiNewKey, j); // Store the value in apiLocations
             }
         } else if (extension == "cs")

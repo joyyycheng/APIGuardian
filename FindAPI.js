@@ -4,7 +4,7 @@ function matchAPIs(extractedData, extension)
     
     let match;
     const variableNames = [];
-    const urls = [];
+    let urls = [];
     let variableValues;    
     const APIurls = new Map();
     for (const fileMap of extractedData) {
@@ -75,6 +75,8 @@ function matchAPIs(extractedData, extension)
                 }
                 APIurls.set(urls[i], newURLS[i]);
             }
+            
+            urls = [];
         
         }
     }

@@ -2,7 +2,7 @@ const axios = require('axios');
 const vscode = require('vscode');
 
 
-async function fetchApiResults(fullURLS, extractedData) {
+async function fetchApiResults(fullURLS, extractedData, extension) {
     const results = new Map();
 
     for (const [originalUrl, finalUrl] of fullURLS) {
@@ -26,34 +26,61 @@ async function fetchApiResults(fullURLS, extractedData) {
                                 break;
                             }
                         }
-
-                        // Step 2: Parse callValue to find fetch parameters (url and options)
-                        let urlParam = '';
-                        let optionsParam = '';
-                        const fetchMatch = /fetch\(([^,]+)(?:,([^)]*))?\)/.exec(callValue);
-                        if (fetchMatch) {
-                            optionsParam = fetchMatch[2]?.trim();
+                        let optionsParam = undefined;
+                        if(extension === "js")
+                        {
+                            const fetchMatch = /fetch\(([^,]+)(?:,([^)]*))?\)/.exec(callValue);
+                            if (fetchMatch) {
+                                optionsParam = fetchMatch[2]?.trim();
+                            }
+                        } else if(extension === "py")
+                        {
+                            const pattern = /,(.*)/s;
+                            const fetchMatch = pattern.exec(callValue);
+                            if (fetchMatch) {
+                                optionsParam = fetchMatch[1]?.trim();
+                            }
                         }
+                        
 
                         // Step 3: Look up values of urlParam and optionsParam in variables
                         const urlVariable =  finalUrl;
-                        const optionsVariable = optionsParam ? fileData.variables.get(optionsParam) : undefined;
-                        let transformedOptionsString = '';
+                        const optionsVariable = fileData.variables.has(optionsParam) ? fileData.variables.get(optionsParam) : optionsParam;
+                        let transformedOptionsString;
                         if(optionsVariable != undefined)
                         {
-                            transformedOptionsString = optionsVariable
-                            .replace(/(\r\n|\r|\n)/g, '')              // Remove any line breaks for easier parsing
-                            .replace(/([{,]\s*)(\w+):/g, '$1"$2":')    // Add double quotes around the keys to make it valid JSON
-                            .replace(/JSON\.stringify\((.*?)\)/g, (match, p1) => {
-                                const dataVariable = fileData.variables.get(p1.trim());
-                                return JSON.stringify(dataVariable); // Replace with actual data object as JSON
-                            });
+                            if (optionsVariable.includes('json=') || optionsVariable.includes('data=')) {
+                                // Match json= or data= followed by a block of JSON-like data
+                                const match = optionsVariable.match(/(json=|data=)(\{[\s\S]*?\})/);
+                                if (match) {
+                                    const jsonContent = JSON.parse(match[2]); // The JSON content
+                                    transformedOptionsString = {
+                                        method: "POST",  // HTTP method
+                                        headers: {
+                                          "Content-Type": "application/json"  // Set the content type to JSON
+                                        },
+                                        body: JSON.stringify(jsonContent)  // Stringify the data to be sent in the body
+                                      };
+                                }
+                            } else 
+                            {
+                                let result = optionsVariable
+                                .replace(/(\r\n|\r|\n)/g, '')              // Remove any line breaks for easier parsing
+                                .replace(/([{,]\s*)(\w+):/g, '$1"$2":')    // Add double quotes around the keys to make it valid JSON
+                                .replace(/JSON\.stringify\((.*?)\)/g, (match, p1) => {
+                                    const dataVariable = fileData.variables.get(p1.trim());
+                                    return JSON.stringify(dataVariable); // Replace with actual data object as JSON
+                                });
+
+                                transformedOptionsString = JSON.parse(result);
+                            }
                         }
                         
 
                         // Clean up the URL value for the request
-                        const cleanUrl = urlVariable.replace(/^f|^'|'$|^`|`$|^"|"$|"/g, '').trim();
-                        const encodedUrl = encodeURI(cleanUrl);
+                        const cleanUrl = urlVariable.replace(/^f|^'|'$|^`|`$|^"|"$|^'/g, '').trim();
+                        const result = cleanUrl.replace(/^['"`]*/, '').replace(/['"`]*$/, '').trim();
+                        const encodedUrl = encodeURI(result);
 
                         try {
                             let response = '';
@@ -62,8 +89,7 @@ async function fetchApiResults(fullURLS, extractedData) {
                             if (requestType === "GET") {
                                 response = await fetch(encodedUrl);
                             } else if (requestType === "POST") {
-                                const options = JSON.parse(transformedOptionsString);
-                                response = await fetch(encodedUrl, options);
+                                response = await fetch(encodedUrl, transformedOptionsString);
                             }
 
                             if (response) {
