@@ -6,6 +6,8 @@ function extractElements(codes, fileName, extension, filePath)
     let importRegex;
     let awaitRegex = '';
     let typeRegex = '';
+    let headerRegex = '';
+    let fieldRegex = '';
 
     switch(extension)
     {
@@ -28,9 +30,12 @@ function extractElements(codes, fileName, extension, filePath)
             awaitRegex = /await\s+([a-zA-Z0-9_.]+)\s*\((.*?)\);\s*/g;
             break;
         case "php":
-            variableRegex = /^\s*(public|private|protected)?\s*(static\s+)?\$(\w+)\s*=\s*(.*?);?$/gm;
+            variableRegex = /^\s*(public|private|protected)?\s*(static\s+)?\$(\w+)\s*=\s*(.*)$/gm;
             functionRegex = /^\s*(public|private|protected)?\s*(static\s+)?function\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\((.*?)\)\s*{/gm;
             importRegex = /\b([a-zA-Z_][a-zA-Z0-9_]*)::([a-zA-Z_][a-zA-Z0-9_]*)\((.*?)\);/gm;
+            typeRegex = /.*POST.*true.*/;
+            headerRegex = /CURLOPT_HTTPHEADER\s*,\s*(\$\w+)/g;
+            fieldRegex = /CURLOPT_POSTFIELDS\s*,\s*(\$\w+)/g;
             break;
             
         default:
@@ -51,37 +56,33 @@ function extractElements(codes, fileName, extension, filePath)
     let match;
 
     const code = codes.replace(/(^|\s)(\/\/.*$)/gm, (match, p1, p2) => {
-        // Check if the previous characters contain http or https
         if (p1.trim().endsWith('http') || p1.trim().endsWith('https')) {
-            return match; // keep the comment if it's a URL
+            return match; 
         }
-        return ''; // remove the comment otherwise
+        return ''; 
     });
 
     while ((match = variableRegex.exec(code)) !== null) {
         if (extension == "js") {
             let key = match[2];
-            let newKey = key; // Start with the original key
+            let newKey = key; 
             let count = 1;
             let value = match[3].trim()
     
-            // Check for existing keys in variables and create a unique key if needed
             while (variables.has(newKey)) {
-                newKey = `${key}_${count}`; // Append _1, _2, etc.
+                newKey = `${key}_${count}`; 
                 count++;
             }
             
             if (value.startsWith("{") || value.startsWith("[")) {
-                let block = value;  // Start with the current match value
+                let block = value; 
                 let braceCount = 0;
     
-                // Initialize brace count based on initial braces in value
                 for (let char of value) {
                     if (char === "{") braceCount++;
                     if (char === "}") braceCount--;
                 }
     
-                // Capture additional characters until braces are balanced
                 let index = variableRegex.lastIndex;
                 while (braceCount !== 0 && index < code.length) {
                     let char = code[index++];
@@ -91,79 +92,67 @@ function extractElements(codes, fileName, extension, filePath)
                     if (char === "}") braceCount--;
                 }
     
-                value = block;  // Set the entire object/array block as the value
+                value = block; 
             }
         
-                // Store the variable name and its value in the variables map
             variables.set(newKey, value);
     
             if (match[3].includes("https") || match[3].includes("http")) {
                 const i = match[0].replace(/^\n/, '').replace(/\r\n/g, '');
     
-                // Check for duplicates in apiLocations
-                let apiKey = `${fileName}.${extension}`; // Use the original file key
-                let apiNewKey = apiKey; // Start with the original api key
+                let apiKey = `${fileName}.${extension}`; 
+                let apiNewKey = apiKey;
                 count = 1;
     
-                // Create a unique key if the apiLocations already contains it
                 while (apiLocations.has(apiNewKey)) {
-                    apiNewKey = `${apiKey}_${count}`; // Append _1, _2, etc.
+                    apiNewKey = `${apiKey}_${count}`;
                     count++;
                 }
     
-                apiLocations.set(apiNewKey, i); // Store the value in apiLocations
+                apiLocations.set(apiNewKey, i); 
 
                 let isPostFound = false;
 
                 while ((match = typeRegex.exec(codes)) !== null) {
                     const fetchArgs = match[1].trim();
                     
-                    // Split based on commas to separate URL and options
                     let args = fetchArgs.split(',');
 
-                    // Trim whitespace from each argument
                     args = args.map(arg => arg.trim());
 
-                    // Check the number of arguments
                     if (args.length > 1) {
-                        // If there are more than 1 argument, it's a POST request (URL + options)
                         types.set(newKey, 'POST');
                         calls.set(newKey, match[0]);
                         isPostFound = true;
                     } else {
-                        // If there is only 1 argument, it's a GET request (only URL)
                         types.set(newKey, 'GET');
                     }
                 }
 
-                // If no fetch call was found, set the type to GET by default
                 if (!isPostFound) {
                     types.set(newKey, 'GET');
                 }
             }
         } else if (extension == "py") {
             let key = match[1];
-            let newKey = key; // Start with the original key
+            let newKey = key;
             let count = 1;
             let value = match[2].trim()
     
-            // Check for existing keys in variables and create a unique key if needed
             while (variables.has(newKey)) {
-                newKey = `${key}_${count}`; // Append _1, _2, etc.
+                newKey = `${key}_${count}`; 
                 count++;
             }
 
             if (value.includes("{") || value.includes("[")) {
-                let block = value;  // Start with the current match value
+                let block = value; 
                 let braceCount = 0;
     
-                // Initialize brace count based on initial braces in value
                 for (let char of value) {
                     if (char === "{") braceCount++;
                     if (char === "}") braceCount--;
                 }
     
-                // Capture additional characters until braces are balanced
                 let index = variableRegex.lastIndex;
                 while (braceCount !== 0 && index < code.length) {
                     let char = code[index++];
@@ -173,22 +162,20 @@ function extractElements(codes, fileName, extension, filePath)
                     if (char === "}") braceCount--;
                 }
     
-                value = block;  // Set the entire object/array block as the value
+                value = block;  
             }
     
-            variables.set(newKey, value); // Set the unique key in variables
+            variables.set(newKey, value); 
     
             if (match[2].includes("https") || match[2].includes("http")) {
                 const j = match[0].replace(/^\n/, '').replace(/\r\n/g, '');
     
-                // Check for duplicates in apiLocations
-                let apiKey = `${fileName}.${extension}`; // Use the original file key
-                let apiNewKey = apiKey; // Start with the original api key
+                let apiKey = `${fileName}.${extension}`;
+                let apiNewKey = apiKey; 
                 count = 1;
     
-                // Create a unique key if the apiLocations already contains it
                 while (apiLocations.has(apiNewKey)) {
-                    apiNewKey = `${apiKey}_${count}`; // Append _1, _2, etc.
+                    apiNewKey = `${apiKey}_${count}`; 
                     count++;
                 }
                 let isPostFound = false;
@@ -196,38 +183,32 @@ function extractElements(codes, fileName, extension, filePath)
                 while ((match = typeRegex.exec(codes)) !== null) {
                     const fetchArgs = match["input"].trim();
                     
-                    // Split based on commas to separate URL and options
                     let args = fetchArgs.split(',');
 
-                    // Trim whitespace from each argument
                     args = args.map(arg => arg.trim());
 
-                    // Check the number of arguments
                     if (args.length > 1) {
-                        // If there are more than 1 argument, it's a POST request (URL + options)
                         types.set(newKey, 'POST');
                         calls.set(newKey, match[1]);
                         isPostFound = true;
                     } else {
-                        // If there is only 1 argument, it's a GET request (only URL)
                         types.set(newKey, 'GET');
                     }
                 }
 
-                // If no fetch call was found, set the type to GET by default
                 if (!isPostFound) {
                     types.set(newKey, 'GET');
                 }
-                apiLocations.set(apiNewKey, j); // Store the value in apiLocations
+                apiLocations.set(apiNewKey, j); 
             }
         } else if (extension == "cs")
         { 
             let key = match[3];
-            let newKey = key; // Start with the original key
+            let newKey = key; 
             let count = 1;
 
             while (variables.has(newKey)) {
-                newKey = `${key}_${count}`; // Append _1, _2, etc.
+                newKey = `${key}_${count}`;
                 count++;
             }
 
@@ -236,47 +217,88 @@ function extractElements(codes, fileName, extension, filePath)
             if (match[4].includes("https") || match[4].includes("http")) {
                 const j = match[0].replace(/^\n/, '').replace(/\r\n/g, '');
     
-                // Check for duplicates in apiLocations
-                let apiKey = `${fileName}.${extension}`; // Use the original file key
-                let apiNewKey = apiKey; // Start with the original api key
+                let apiKey = `${fileName}.${extension}`; 
+                let apiNewKey = apiKey; 
                 count = 1;
     
-                // Create a unique key if the apiLocations already contains it
                 while (apiLocations.has(apiNewKey)) {
-                    apiNewKey = `${apiKey}_${count}`; // Append _1, _2, etc.
+                    apiNewKey = `${apiKey}_${count}`; 
                     count++;
                 }
     
-                apiLocations.set(apiNewKey, j); // Store the value in apiLocations
+                apiLocations.set(apiNewKey, j); 
             }
         } else if(extension == "php")
         {
             let key = `$${match[3]}`;
-            let newKey = key; // Start with the original key
+            let newKey = key; 
             let count = 1;
+            let value = match[4].trim()
 
             while (variables.has(newKey)) {
-                newKey = `${key}_${count}`; // Append _1, _2, etc.
+                newKey = `${key}_${count}`; 
                 count++;
             }
 
-            variables.set(newKey, match[4]);
+            if (!value.trim().endsWith(";")) {
+                let collectedValue = value; 
+                let braceCount = 0;
+                let nextIndex = variableRegex.lastIndex;
+
+                for (let char of value) {
+                    if (char === "{" || char === "[" || char === "(") braceCount++;
+                    if (char === "}" || char === "]" || char === ")") braceCount--;
+                }
+
+                while ((braceCount !== 0 || !collectedValue.trim().endsWith(";")) && nextIndex < code.length) {
+                    const nextLine = code.substring(nextIndex).split("\n", 1)[0];
+                    nextIndex += nextLine.length + 1; 
+                    collectedValue += "\n" + nextLine;
+
+                    for (let char of nextLine) {
+                        if (char === "{" || char === "[" || char === "(") braceCount++;
+                        if (char === "}" || char === "]" || char === ")") braceCount--;
+                    }
+                }
+
+                value = collectedValue; 
+            }         
+            value = value.trim().replace(/;$/, "");
+            variables.set(newKey, value);
 
             if (match[4].includes("https") || match[4].includes("http")) {
                 const j = match[0].replace(/^\n/, '').replace(/\r\n/g, '');
     
-                // Check for duplicates in apiLocations
-                let apiKey = `${fileName}.${extension}`; // Use the original file key
-                let apiNewKey = apiKey; // Start with the original api key
+                let apiKey = `${fileName}.${extension}`; 
+                let apiNewKey = apiKey; 
                 count = 1;
     
-                // Create a unique key if the apiLocations already contains it
                 while (apiLocations.has(apiNewKey)) {
-                    apiNewKey = `${apiKey}_${count}`; // Append _1, _2, etc.
+                    apiNewKey = `${apiKey}_${count}`; 
                     count++;
                 }
     
-                apiLocations.set(apiNewKey, j); // Store the value in apiLocations
+                apiLocations.set(apiNewKey, j); 
+
+                let isPostFound = false;
+
+                while ((match = typeRegex.exec(codes)) !== null) {
+                    types.set(newKey, 'POST');
+                    isPostFound = true;
+                    break;
+                }
+                while ((match = headerRegex.exec(codes)) !== null) {
+                    const args = match[0].split(',');
+                    variables.set(args[0], args[1]); 
+                }
+                while ((match = fieldRegex.exec(codes)) !== null) {
+                    const args = match[0].split(',');
+                    variables.set(args[0], args[1]); 
+                }
+
+                if (!isPostFound) {
+                    types.set(newKey, 'GET');
+                }
             }
         }
     }

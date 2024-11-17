@@ -27,6 +27,8 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
                             }
                         }
                         let optionsParam = undefined;
+                        let header = undefined;
+                        let field = undefined;
                         if(extension === "js")
                         {
                             const fetchMatch = /fetch\(([^,]+)(?:,([^)]*))?\)/.exec(callValue);
@@ -39,6 +41,30 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
                             const fetchMatch = pattern.exec(callValue);
                             if (fetchMatch) {
                                 optionsParam = fetchMatch[1]?.trim();
+                            }
+                        } else if (extension == "php")
+                        {
+                            if(fileData.variables.has("CURLOPT_HTTPHEADER"))
+                            {
+                                let headers = fileData.variables.get("CURLOPT_HTTPHEADER").trim();
+                                let contentType =  fileData.variables.get(headers);
+                                let header1 = contentType.replace(/array\(\s*|\s*\);/g, '').trim();
+                                let inputString = header1.replace(/\)$/, '').trim();
+                                let cleanString = inputString.replace(/\\\"/g, '').replace(/\r?\n|\r/g, ''); // Clean quotes and newlines
+                                let keyValuePairs = cleanString.split(',');
+
+                                // Step 2: Convert to a JSON object
+                                header = keyValuePairs.reduce((acc, pair) => {
+                                    let [key, value] = pair.split(':').map(item => item.trim().replace(/"/g, ''));  // Remove extra spaces and quotes
+                                    acc[key] = value;  // Add to object
+                                    return acc;
+                                }, {});
+                                // let header1 = cleanStr.split(/\s*,\s*/);
+                                // header = header1.find(contentType => contentType.includes("Content-Type"));
+
+                                let fields = fileData.variables.get("CURLOPT_POSTFIELDS").trim();
+                                let cleanFields = fileData.variables.get(fields)
+                                field = cleanFields.replace("<<<DATA", '').replace("\r\nDATA", '').trim();
                             }
                         }
                         
@@ -74,6 +100,13 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
 
                                 transformedOptionsString = JSON.parse(result);
                             }
+                        } else if (header != undefined && field != undefined)
+                        {
+                            transformedOptionsString = {
+                                method: "POST",  // HTTP method
+                                headers: header,  // Set the content type to JSON
+                                body: field // Stringify the data to be sent in the body
+                            };
                         }
                         
 
