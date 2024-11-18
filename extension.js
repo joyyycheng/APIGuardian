@@ -79,23 +79,24 @@ function activate(context) {
             //     console.error("Error processing PY files:", error);
             // }
 
-            // try {
-            //     matchFileInfo(csFile);
-            //     let csResults = matchAPIs(csFile, "cs");
-            //     let apiResults = await fetchApiResults(csResults);
-            //     processFiles(csFile, apiResults, "cs", context, hoverProviders);
-            // } catch (error) {
-            //     console.error("Error processing CS files:", error);
-            // }
-
             try {
-                matchFileInfo(phpFile);
-                let phpResults = matchAPIs(phpFile, "php");
-                let apiResults3 = await fetchApiResults(phpResults, phpFile, "php");
-                processFiles(phpFile, apiResults3, "php", context, hoverProviders);
+                matchFileInfo(csFile);
+                console.log(csFile)
+                let csResults = matchAPIs(csFile, "cs");
+                let apiResults = await fetchApiResults(csResults, csFile, "cs");
+                processFiles(csFile, apiResults, "cs", context, hoverProviders);
             } catch (error) {
-                console.error("Error processing PHP files:", error);
+                console.error("Error processing CS files:", error);
             }
+
+            // try {
+            //     matchFileInfo(phpFile);
+            //     let phpResults = matchAPIs(phpFile, "php");
+            //     let apiResults3 = await fetchApiResults(phpResults, phpFile, "php");
+            //     processFiles(phpFile, apiResults3, "php", context, hoverProviders);
+            // } catch (error) {
+            //     console.error("Error processing PHP files:", error);
+            // }
             vscode.window.showInformationMessage("API status check completed.");
             });
         }
