@@ -1,0 +1,130 @@
+
+    # API Status Report
+
+
+    --------------------------------
+
+    
+        API : https://api.openweathermap.org/data/2.5/weather?q=London&appid=664325f428fa6d02930a45966b860fe4&units=metric
+
+        Location : d:\SIT\Capstone\WeatherApp\WeatherService.cs
+
+        Status : 200
+
+        Message : undefined
+
+        --------------------------------
+
+        
+        API : https://dog.ceo/api/breeds/list/none
+
+        Location : d:\SIT\Capstone\WeatherApp\WeatherService.cs
+
+        Status : error
+
+        Message : No route found for "GET http://dog.ceo/api/breeds/list/none" with code: 0
+
+        --------------------------------
+
+        
+        API : https://api.openweathermap.org/data/2.5/weather?q=Maaysia&appid=664325f428fa6d02930a45966b860fe4&units=metric
+
+        Location : d:\SIT\Capstone\weather.js
+
+        Status : 404
+
+        Message : city not found
+
+        --------------------------------
+
+        
+        API : https://dog.ceo/api/breeds/list/all
+
+        Location : d:\SIT\Capstone\weather.js
+
+        Status : success
+
+        Message : [object Object]
+
+        --------------------------------
+
+        
+        API : https://reqbin.com/echo/put/json
+
+        Location : d:\SIT\Capstone\postapi.js
+
+        Status : true
+
+        Message : undefined
+
+        --------------------------------
+
+        
+        API : https://api.openweathermap.org/data/2.5/weather?q=London&appid=664325f428fa6d02930a45966b860fe4&units=metrics
+
+        Location : d:\SIT\Capstone\weatherapi.py
+
+        Status : 200
+
+        Message : undefined
+
+        --------------------------------
+
+        
+        API : https://dog.ceo/api/breeds/list/all
+
+        Location : d:\SIT\Capstone\weatherapi.py
+
+        Status : success
+
+        Message : [object Object]
+
+        --------------------------------
+
+        
+        API : https://reqbin.com/echo/post/json
+
+        Location : d:\SIT\Capstone\postapi.py
+
+        Status : true
+
+        Message : undefined
+
+        --------------------------------
+
+        
+        API : https://api.openweathermap.org/data/1.5/weather?q=Singapore&appid=%22664325f428fa6d02930a45966b860fe4%22&units=metric
+
+        Location : d:\SIT\Capstone\weather.php
+
+        Status : 401
+
+        Message : Invalid API key. Please see https://openweathermap.org/faq#error401 for more info.
+
+        --------------------------------
+
+        
+        API : https://dog.ceo/api/breeds/list/none
+
+        Location : d:\SIT\Capstone\weather.php
+
+        Status : error
+
+        Message : No route found for "GET http://dog.ceo/api/breeds/list/none" with code: 0
+
+        --------------------------------
+
+        
+        API : https://reqbin.com/echo/post/json
+
+        Location : d:\SIT\Capstone\postapi.php
+
+        Status : true
+
+        Message : undefined
+
+        --------------------------------
+
+        
+
+**End of Report**

@@ -105,7 +105,7 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
                         } else if (header != undefined && field != undefined)
                         {
                             transformedOptionsString = {
-                                method: "OPTION",  // HTTP method
+                                method: "POST",  // HTTP method
                                 headers: header,  // Set the content type to JSON
                                 body: field // Stringify the data to be sent in the body
                             };
@@ -221,8 +221,9 @@ async function generateReport(results) {
     --------------------------------\n
     `;
 
+
     results.forEach(result => {
-        const { url, location, message, status} = result;
+        const { url, location, message, status} = result[1];
         tableContent += `
         API : ${url}\n
         Location : ${location}\n
