@@ -43,6 +43,7 @@
   },
   "dependencies": {
     "axios": "^1.7.7",
+    "fetch-mock": "^12.2.0",
     "generator-code": "^1.11.3",
     "vscode": "^1.1.37",
     "yo": "^5.0.0"

@@ -1,0 +1,42 @@
+
+    # API Status Report
+
+
+    --------------------------------
+
+    
+        API : https://api.openweathermap.org/data/2.5/weather?q=Maaysia&appid=664325f428fa6d02930a45966b860fe4&units=metric
+
+        Location : d:\SIT\Capstone\weather.js
+
+        Status : 404
+
+        Message : city not found
+
+        --------------------------------
+
+        
+        API : https://dog.ceo/api/breeds/list/all
+
+        Location : d:\SIT\Capstone\weather.js
+
+        Status : success
+
+        Message : [object Object]
+
+        --------------------------------
+
+        
+        API : https://reqbin.com/echo/put/json
+
+        Location : d:\SIT\Capstone\postapi.js
+
+        Status : true
+
+        Message : undefined
+
+        --------------------------------
+
+        
+
+**End of Report**

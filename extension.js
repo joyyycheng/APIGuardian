@@ -7,7 +7,7 @@ const { extractElements} = require('./RegularExpression');
 const { matchFileInfo } = require('./FileMatch');
 const { matchAPIs } = require('./FindAPI');
 const { processFiles } = require('./HighlightandMessage');
-const { fetchApiResults } = require('./CheckAPI');
+const { fetchApiResults, generateReport } = require('./CheckAPI');
 /**
  * @param {vscode.ExtensionContext} context
  */
@@ -51,12 +51,12 @@ function activate(context) {
                 },
             async (progress) => {
             const globPattern = '**/*.{js,py,cs,php}';
-            let files;
+            let files = [];
             if (searchQuery == "Scan" && searchArray[0] != '')
             {
                 for (const pattern of searchArray) {
                     const file = await vscode.workspace.findFiles(`**/${pattern}`);
-                    files.push(file[0]); // Append the found files to the results array
+                    files.push(...file);
                 }
             } else 
             {
@@ -75,7 +75,7 @@ function activate(context) {
                 }
                 if(searchQuery == "Skip")
                 {
-                    if (file.fsPath.includes(searchArray[0])) {
+                    if (searchArray.some(pattern => file.fsPath.includes(pattern))) {
                         continue; // Skip this file
                     }
                 }
@@ -105,6 +105,7 @@ function activate(context) {
                 matchFileInfo(jsFile);
                 let jsResults = matchAPIs(jsFile, "js");
                 let apiResults1 = await fetchApiResults(jsResults, jsFile, "js");
+                generateReport(apiResults1);
                 processFiles(jsFile, apiResults1, "js", context, hoverProviders);
             } catch (error) {
                 console.error("Error processing JS files:", error);

@@ -1,6 +1,8 @@
 const axios = require('axios');
 const vscode = require('vscode');
-
+const fetchMock = require('fetch-mock');
+const fs = require('fs');
+const path = require('path');
 
 async function fetchApiResults(fullURLS, extractedData, extension) {
     const results = new Map();
@@ -122,6 +124,10 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
                             if (requestType === "GET") {
                                 response = await fetch(encodedUrl);
                             } else if (requestType === "POST") {
+                                // fetchMock.post(encodedUrl, {
+                                //     status: 200,
+                                //     body: { success: true, message: "Mocked response received!" }
+                                // });
                                 response = await fetch(encodedUrl, transformedOptionsString);
                             }
 
@@ -133,7 +139,13 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
 
                                 if (data.cod === 200 || data.status === "success" || data.success == "true") {
                                     markdownString.appendMarkdown(`**Status**: <span style="color:var(--vscode-charts-green);">Success/200</span>\n\n`);
-                                    results.set(originalUrl, markdownString);
+                                    results.set(originalUrl, {
+                                        markdown: markdownString,
+                                        url : encodedUrl,
+                                        location: fileData.filePath,
+                                        status : data.cod || data.status || data.success,
+                                        message: data.message,
+                                    });
                                 } else {
                                     const baseUrl = encodedUrl.split("/")[2];
                                     const GoogleResults = await searchGoogle(baseUrl + " " + data.message);
@@ -147,7 +159,14 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
                                     markdownString.appendMarkdown(`**Title**: ${GoogleResults[0].title}\n\n`);
                                     markdownString.appendMarkdown(`**Link**: [${GoogleResults[0].link}](${GoogleResults[0].link})\n\n`);
                                     vscode.window.showInformationMessage(encodedUrl + " has an error");
-                                    results.set(originalUrl, markdownString);
+                                    results.set(originalUrl, {
+                                        markdown: markdownString,
+                                        url : encodedUrl,
+                                        location: fileData.filePath,
+                                        status : data.cod || data.status,
+                                        message: data.message,
+                                    }
+                                    );
                                 }
                             }
                         } catch (error) {
@@ -196,6 +215,46 @@ async function searchGoogle(query) {
 }
 
 
+async function generateReport(results) {
+    let tableContent = `
+    # API Status Report\n\n
+    --------------------------------\n
+    `;
+
+    results.forEach(result => {
+        const { url, location, message, status} = result;
+        tableContent += `
+        API : ${url}\n
+        Location : ${location}\n
+        Status : ${status}\n
+        Message : ${message}\n
+        --------------------------------\n
+        `;
+    });
+
+    const content = `${tableContent}\n\n**End of Report**`;
+
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
+    const year = String(now.getFullYear()).slice(-2); // Last two digits of the year
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    const timestamp = `${day}${month}${year}${hours}${minutes}${seconds}`;
+
+    const filePath = path.join(__dirname, 'reports', `api_status_report_${timestamp}.txt`); // Saves in "reports" folder within the project directory
+    const dirPath = path.dirname(filePath);
+    if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath, { recursive: true });
+    }
+    
+    // Now write the file
+    fs.writeFile(filePath, content, (err) => {
+        if (err) console.log(err);
+        console.log('API Status Report has been saved at ' + filePath);
+    });
+}
 
 
-module.exports = { fetchApiResults };
+module.exports = { fetchApiResults, generateReport };

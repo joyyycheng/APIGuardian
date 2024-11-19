@@ -25,7 +25,7 @@ function processFiles(fileData, apiData, fileType, context, hoverProviders) {
 
                             // Open the document and accumulate matches
                             const docPromise = vscode.workspace.openTextDocument(fileUri).then((d) => {
-                                matches.push({ document: d, keyToHighlight: value1, text: value});
+                                matches.push({ document: d, keyToHighlight: value1, text: value.markdown });
                             }, (error) => {
                                 vscode.window.showErrorMessage(`Could not open ${fileType} file: ${error.message}`);
                             });
