@@ -212,6 +212,11 @@ function extractElements(codes, fileName, extension, filePath)
                 count++;
             }
 
+            if(match[4].includes("$"))
+            {
+                match[4] = match[4].replace('$', '').trim();
+            }
+
             variables.set(newKey, match[4]);
 
             if (match[4].includes("https") || match[4].includes("http")) {
@@ -227,6 +232,7 @@ function extractElements(codes, fileName, extension, filePath)
                 }
     
                 apiLocations.set(apiNewKey, j); 
+                types.set(newKey, 'GET');
             }
         } else if(extension == "php")
         {

@@ -103,7 +103,7 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
                         } else if (header != undefined && field != undefined)
                         {
                             transformedOptionsString = {
-                                method: "POST",  // HTTP method
+                                method: "OPTION",  // HTTP method
                                 headers: header,  // Set the content type to JSON
                                 body: field // Stringify the data to be sent in the body
                             };
@@ -146,7 +146,7 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
                                     markdownString.appendMarkdown(`**Recommended Fix (from ${GoogleResults[0].displayLink})**:\n\n`);
                                     markdownString.appendMarkdown(`**Title**: ${GoogleResults[0].title}\n\n`);
                                     markdownString.appendMarkdown(`**Link**: [${GoogleResults[0].link}](${GoogleResults[0].link})\n\n`);
-                                    
+                                    vscode.window.showInformationMessage(encodedUrl + " has an error");
                                     results.set(originalUrl, markdownString);
                                 }
                             }

@@ -20,6 +20,29 @@ function activate(context) {
         clearHoverProviders();
         const editor = vscode.window.activeTextEditor;
         if (editor) {
+            const searchQuery = await vscode.window.showInputBox({
+                placeHolder: "Skip Files or Scan Files",
+                prompt: "Skip/Scan",
+                value: ""
+              });
+            let search1Query;
+            if(searchQuery == "Skip")
+            {     
+                search1Query = await vscode.window.showInputBox({
+                    placeHolder: "Which files would you like to skip ( use | as a separator if there are multiple )",
+                    prompt: "File Name 1 | File Name 2",
+                    value: ""
+                    });
+            } else 
+            {
+                search1Query = await vscode.window.showInputBox({
+                    placeHolder: "Which files would you like to scan ( use | as a separator if there are multiple )",
+                    prompt: "File Name 1 | File Name 2",
+                    value: ""
+                    });
+            }
+            const searchArray = search1Query.split('|').map(item => item.trim());
+
             vscode.window.withProgress(
                 {
                     location: vscode.ProgressLocation.Notification,
@@ -28,7 +51,17 @@ function activate(context) {
                 },
             async (progress) => {
             const globPattern = '**/*.{js,py,cs,php}';
-            const files = await vscode.workspace.findFiles(globPattern);
+            let files;
+            if (searchQuery == "Scan" && searchArray[0] != '')
+            {
+                for (const pattern of searchArray) {
+                    const file = await vscode.workspace.findFiles(`**/${pattern}`);
+                    files.push(file[0]); // Append the found files to the results array
+                }
+            } else 
+            {
+                files = await vscode.workspace.findFiles(globPattern);
+            }
             const jsFile =[]
             const pyFile =[]
             const csFile = []
@@ -39,6 +72,12 @@ function activate(context) {
                 const fileContent = document.getText();
                 if (file.fsPath.includes('node_modules')|| file.fsPath.includes('vscode') || file.fsPath.includes('__pycache__') || file.fsPath.includes('bin') || file.fsPath.includes('obj')) {
                     continue; // Skip this file
+                }
+                if(searchQuery == "Skip")
+                {
+                    if (file.fsPath.includes(searchArray[0])) {
+                        continue; // Skip this file
+                    }
                 }
                 switch (fileExtension) {
                     case "js":
@@ -81,8 +120,9 @@ function activate(context) {
 
             // try {
             //     matchFileInfo(csFile);
+            //     console.log(csFile)
             //     let csResults = matchAPIs(csFile, "cs");
-            //     let apiResults = await fetchApiResults(csResults);
+            //     let apiResults = await fetchApiResults(csResults, csFile, "cs");
             //     processFiles(csFile, apiResults, "cs", context, hoverProviders);
             // } catch (error) {
             //     console.error("Error processing CS files:", error);
