@@ -8,6 +8,8 @@ function extractElements(codes, fileName, extension, filePath)
     let typeRegex = '';
     let headerRegex = '';
     let fieldRegex = '';
+    let expressRegex = '';
+    let portRegex = ''
 
     switch(extension)
     {
@@ -18,7 +20,7 @@ function extractElements(codes, fileName, extension, filePath)
             typeRegex = /\.post\(([\s\S]*?)\)/g;
             break;
         case "js":
-            variableRegex = /^\s*(const|let|var)?\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.*?);?$/gm;
+            variableRegex = /^\s*(const|let|var)?\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.*?);?$|^\s*app\.(get|post|put|delete)\s*\(([^)]+)\)\s*;?/gm
             functionRegex = /^\s*(async\s+)?(function\s+([a-zA-Z_][a-zA-Z0-9_]*)|\(?\s*([a-zA-Z_][a-zA-Z0-9_]*)?\s*\)?\s*=>)\s*\((.*?)\)/gm;
             importRegex = /^\s*(const)?\s*(\{([^}]+)\}|\w+)\s*=\s*(require\(\s*['"]([^'"]+)['"]\s*\)|import\s+\{([^}]+)\}\s*from\s*['"]([^'"]+)['"]\s*);?\s*$/gm;
             typeRegex = /fetch\s*\(\s*([^)]+?)\s*\)/g;
@@ -54,6 +56,10 @@ function extractElements(codes, fileName, extension, filePath)
     const calls = new Map();
 
     let match;
+    let expressURL;
+    let expressPort;
+    let express;
+    let expressPortVar;
 
     const code = codes.replace(/(^|\s)(\/\/.*$)/gm, (match, p1, p2) => {
         if (p1.trim().endsWith('http') || p1.trim().endsWith('https')) {
@@ -67,32 +73,54 @@ function extractElements(codes, fileName, extension, filePath)
             let key = match[2];
             let newKey = key; 
             let count = 1;
-            let value = match[3].trim()
+            let value = (match[3] && match[3].trim()) ? match[3].trim() : (match[5] && match[5].trim());
+            match[3] = value;
+
     
             while (variables.has(newKey)) {
                 newKey = `${key}_${count}`; 
                 count++;
             }
             
-            if (value.startsWith("{") || value.startsWith("[")) {
-                let block = value; 
+            if (!value.trim().endsWith(";")) {
+                let collectedValue = value; 
                 let braceCount = 0;
-    
+                let nextIndex = variableRegex.lastIndex;
+
                 for (let char of value) {
-                    if (char === "{") braceCount++;
-                    if (char === "}") braceCount--;
+                    if (char === "{" || char === "[" || char === "(") braceCount++;
+                    if (char === "}" || char === "]" || char === ")") braceCount--;
                 }
-    
-                let index = variableRegex.lastIndex;
-                while (braceCount !== 0 && index < code.length) {
-                    let char = code[index++];
-                    block += char;
-    
-                    if (char === "{") braceCount++;
-                    if (char === "}") braceCount--;
+
+                while ((braceCount !== 0 || !collectedValue.trim().endsWith(";")) && nextIndex < code.length) {
+                    const nextLine = code.substring(nextIndex).split("\n", 1)[0];
+                    nextIndex += nextLine.length + 1; 
+                    collectedValue += "\n" + nextLine;
+
+                    for (let char of nextLine) {
+                        if (char === "{" || char === "[" || char === "(") braceCount++;
+                        if (char === "}" || char === "]" || char === ")") braceCount--;
+                    }
                 }
-    
-                value = block; 
+
+                value = collectedValue; 
+            }     
+
+            if(value == "express()")
+            {
+                express = newKey;
+                let appListenRegex = new RegExp(`${express}\\.listen\\((.*?)\\)`, 'g');
+                let match1;
+                while ((match1 = appListenRegex.exec(code)) !== null) {
+                    console.log(match1);
+                    expressPortVar = match1[1].trim().split(',')[0];
+                    break;
+                }
+            }
+
+            if(newKey == expressPortVar)
+            {
+                expressURL = `http://localhost:${value}/`
             }
         
             variables.set(newKey, value);

@@ -103,43 +103,44 @@ function activate(context) {
                 }
             }
             try {
-                matchFileInfo(jsFile);
-                let jsResults = matchAPIs(jsFile, "js");
-                apiResults1 = await fetchApiResults(jsResults, jsFile, "js");
-                processFiles(jsFile, apiResults1, "js", context, hoverProviders);
+                console.log(jsFile);
+                // matchFileInfo(jsFile);
+                // let jsResults = matchAPIs(jsFile, "js");
+                // apiResults1 = await fetchApiResults(jsResults, jsFile, "js");
+                // processFiles(jsFile, apiResults1, "js", context, hoverProviders);
             } catch (error) {
                 console.error("Error processing JS files:", error);
             }
-            try {
-                matchFileInfo(pyFile);
-                let pyResults = matchAPIs(pyFile, "py");
-                apiResults2 = await fetchApiResults(pyResults, pyFile, "py");
-                processFiles(pyFile, apiResults2, "py", context, hoverProviders);
-            } catch (error) {
-                console.error("Error processing PY files:", error);
-            }
+            // try {
+            //     matchFileInfo(pyFile);
+            //     let pyResults = matchAPIs(pyFile, "py");
+            //     apiResults2 = await fetchApiResults(pyResults, pyFile, "py");
+            //     processFiles(pyFile, apiResults2, "py", context, hoverProviders);
+            // } catch (error) {
+            //     console.error("Error processing PY files:", error);
+            // }
 
-            try {
-                matchFileInfo(csFile);
-                console.log(csFile)
-                let csResults = matchAPIs(csFile, "cs");
-                apiResults = await fetchApiResults(csResults, csFile, "cs");
-                processFiles(csFile, apiResults, "cs", context, hoverProviders);
-            } catch (error) {
-                console.error("Error processing CS files:", error);
-            }
+            // try {
+            //     matchFileInfo(csFile);
+            //     console.log(csFile)
+            //     let csResults = matchAPIs(csFile, "cs");
+            //     apiResults = await fetchApiResults(csResults, csFile, "cs");
+            //     processFiles(csFile, apiResults, "cs", context, hoverProviders);
+            // } catch (error) {
+            //     console.error("Error processing CS files:", error);
+            // }
 
-            try {
-                matchFileInfo(phpFile);
-                let phpResults = matchAPIs(phpFile, "php");
-                apiResults3 = await fetchApiResults(phpResults, phpFile, "php");
-                processFiles(phpFile, apiResults3, "php", context, hoverProviders);
-            } catch (error) {
-                console.error("Error processing PHP files:", error);
-            }
+            // try {
+            //     matchFileInfo(phpFile);
+            //     let phpResults = matchAPIs(phpFile, "php");
+            //     apiResults3 = await fetchApiResults(phpResults, phpFile, "php");
+            //     processFiles(phpFile, apiResults3, "php", context, hoverProviders);
+            // } catch (error) {
+            //     console.error("Error processing PHP files:", error);
+            // }
 
-            var merged = new Set([...apiResults, ...apiResults1, ...apiResults2 , ...apiResults3]);
-            generateReport(merged);
+            // var merged = new Set([...apiResults, ...apiResults1, ...apiResults2 , ...apiResults3]);
+            // generateReport(merged);
 
             vscode.window.showInformationMessage("API status check completed.");
             });

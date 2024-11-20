@@ -1,6 +1,5 @@
 const axios = require('axios');
 const vscode = require('vscode');
-const fetchMock = require('fetch-mock');
 const fs = require('fs');
 const path = require('path');
 
