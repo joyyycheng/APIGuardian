@@ -103,11 +103,10 @@ function activate(context) {
                 }
             }
             try {
-                console.log(jsFile);
-                // matchFileInfo(jsFile);
-                // let jsResults = matchAPIs(jsFile, "js");
-                // apiResults1 = await fetchApiResults(jsResults, jsFile, "js");
-                // processFiles(jsFile, apiResults1, "js", context, hoverProviders);
+                matchFileInfo(jsFile);
+                let jsResults = matchAPIs(jsFile, "js");
+                apiResults1 = await fetchApiResults(jsResults, jsFile, "js");
+                processFiles(jsFile, apiResults1, "js", context, hoverProviders);
             } catch (error) {
                 console.error("Error processing JS files:", error);
             }

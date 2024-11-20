@@ -19,13 +19,24 @@ function processFiles(fileData, apiData, fileType, context, hoverProviders) {
             if (fileData.apiLocations.size !== 0) {
                 for (const [key, value] of apiData) {
                     for (const [key1, value1] of fileData.apiLocations) {
-                        if (value1.includes(key)) {
+                        let newVal = value1;
+                        if(value1.includes('|'))
+                        {
+                            newVal = value1.split('|')[1].trim();
+                        }
+                        if (newVal.includes(key)) {
 
                             const fileUri = vscode.Uri.file(fileURL);
 
                             // Open the document and accumulate matches
                             const docPromise = vscode.workspace.openTextDocument(fileUri).then((d) => {
-                                matches.push({ document: d, keyToHighlight: value1, text: value.markdown });
+                                if(value.markdown == undefined)
+                                {
+                                    matches.push({ document: d, keyToHighlight: value1.split('|')[0].trim(), text: value });
+                                } else
+                                {
+                                    matches.push({ document: d, keyToHighlight: value1.split('|')[0].trim(), text: value.markdown });
+                                }
                             }, (error) => {
                                 vscode.window.showErrorMessage(`Could not open ${fileType} file: ${error.message}`);
                             });

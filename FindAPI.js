@@ -1,11 +1,12 @@
 function matchAPIs(extractedData, extension)
 {
-    const variableRegex = /\{(.*?)\}|\.?\s*self::\$(\w+)\s*\./g;
+    const variableRegex = /\{(.*?)\}|\.?\s*self::\$(\w+)\s*\.|\/:(\w+)/g;
     
     let match;
     const variableNames = [];
     let urls = [];
     let variableValues;    
+    let express = false;
     const APIurls = new Map();
     for (const fileMap of extractedData) {
         for (const [fileName, fileData] of fileMap) {
@@ -15,8 +16,13 @@ function matchAPIs(extractedData, extension)
                     while ((match = variableRegex.exec(value)) !== null) {
                         const curlyVariable = match[1]; // For {variable}
                         const selfVariable = match[2]; // For self::$variable
+                        const expressVariable = match[3]; // For /:variable
+                        if(expressVariable != undefined) 
+                        {
+                            express = true;
+                        }
 
-                        let newVariableName = curlyVariable || selfVariable; // Get the variable name
+                        let newVariableName = curlyVariable || selfVariable || expressVariable; // Get the variable name
                         let suffixIndex = 1;
 
                         // If it's a self variable, prepend the dollar sign
@@ -24,6 +30,8 @@ function matchAPIs(extractedData, extension)
                             newVariableName = `$${selfVariable}`;
                         } else if (curlyVariable) {
                             newVariableName = `${curlyVariable}`;
+                        } else if (expressVariable) {
+                            newVariableName = `${expressVariable}`
                         }
 
                         // Ensure the variable name is unique
@@ -38,8 +46,11 @@ function matchAPIs(extractedData, extension)
                     variableValues = new Map(
                         variableNames.map(variable => {
                             let value = fileData.variables.get(variable);
-                            if (typeof value === 'string') {
+                            if (typeof value === 'string' && express == false) {
                                 value = value.replace(/^['"]|['"]$/g, ''); // Remove leading and trailing quotes
+                            } else if(typeof value === 'string' && express == true)
+                            {
+                                value = value.split(",")[1].replace(")", "").trim();
                             }
                             
                             return [variable, value];
@@ -54,7 +65,13 @@ function matchAPIs(extractedData, extension)
                 for (const [key, value] of variableValues) {
                     if(extension == "js")
                     {
-                        newURLS[i] = newURLS[i].replace(`\${${key}}`, value); // Create a new string with the replaced value
+                        if (express == false)
+                        {
+                            newURLS[i] = newURLS[i].replace(`\${${key}}`, value); // Create a new string with the replaced value
+                        } else if (express == true)
+                        {
+                            newURLS[i] = newURLS[i].replace(`\:${key}`, value); // Create a new string with the replaced value
+                        }
                     } 
                     else if(extension == "py")
                     {

@@ -5,13 +5,15 @@ const path = require('path');
 
 async function fetchApiResults(fullURLS, extractedData, extension) {
     const results = new Map();
-
+    let express = undefined;
     for (const [originalUrl, finalUrl] of fullURLS) {
         for (let i = 0; i < extractedData.length; i++) {
             for (const [fileName, fileData] of extractedData[i]) {
                 for (const [varKey, varValue] of fileData.variables) {
                     if (varValue === originalUrl) {
-
+                        if (extension === "js" && fileData.variables.has("express")) {
+                            express = true;
+                        }                        
                         let requestType = '';
                         for (const [typeKey, typeValue] of fileData.type) {
                             if (typeKey === varKey) {
@@ -32,10 +34,17 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
                         let field = undefined;
                         if(extension === "js")
                         {
-                            const fetchMatch = /fetch\(([^,]+)(?:,([^)]*))?\)/.exec(callValue);
-                            if (fetchMatch) {
-                                optionsParam = fetchMatch[2]?.trim();
+                            if(express == false)
+                            {
+                                const fetchMatch = /fetch\(([^,]+)(?:,([^)]*))?\)/.exec(callValue);
+                                if (fetchMatch) {
+                                    optionsParam = fetchMatch[2]?.trim();
+                                }
+                            } else if(express == true)
+                            {
+
                             }
+
                         } else if(extension === "py")
                         {
                             const pattern = /,(.*)/s;
@@ -108,6 +117,15 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
                                 headers: header,  // Set the content type to JSON
                                 body: field // Stringify the data to be sent in the body
                             };
+                        } else if(express == true)
+                        {
+                            transformedOptionsString = {
+                                method: "POST",  // HTTP method
+                                headers: {
+                                  "Content-Type": "application/json"  // Set the content type to JSON
+                                },
+                                body: JSON.stringify({})  // Stringify the data to be sent in the body
+                              };
                         }
                         
 
@@ -131,7 +149,14 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
                             }
 
                             if (response) {
-                                const data = await response.json();
+                                let data;
+                                if(express == false)
+                                {
+                                    data = await response.json();
+                                } else if(express == true)
+                                {
+                                    data = await response.text();
+                                }
                                 const markdownString = new vscode.MarkdownString();
                                 markdownString.supportHtml = true;
                                 markdownString.appendMarkdown(`**API Response Details for**: ${encodedUrl}\n\n`);

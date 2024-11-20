@@ -20,7 +20,7 @@ function extractElements(codes, fileName, extension, filePath)
             typeRegex = /\.post\(([\s\S]*?)\)/g;
             break;
         case "js":
-            variableRegex = /^\s*(const|let|var)?\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.*?);?$|^\s*app\.(get|post|put|delete)\s*\(([^)]+)\)\s*;?/gm
+            variableRegex = /^\s*(const|let|var)?\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.*?)$|^\s*app\.(get|post|put|delete)\s*\(([^)]+)\)\s*;?/gm
             functionRegex = /^\s*(async\s+)?(function\s+([a-zA-Z_][a-zA-Z0-9_]*)|\(?\s*([a-zA-Z_][a-zA-Z0-9_]*)?\s*\)?\s*=>)\s*\((.*?)\)/gm;
             importRegex = /^\s*(const)?\s*(\{([^}]+)\}|\w+)\s*=\s*(require\(\s*['"]([^'"]+)['"]\s*\)|import\s+\{([^}]+)\}\s*from\s*['"]([^'"]+)['"]\s*);?\s*$/gm;
             typeRegex = /fetch\s*\(\s*([^)]+?)\s*\)/g;
@@ -58,7 +58,7 @@ function extractElements(codes, fileName, extension, filePath)
     let match;
     let expressURL;
     let expressPort;
-    let express;
+    let express = undefined;
     let expressPortVar;
 
     const code = codes.replace(/(^|\s)(\/\/.*$)/gm, (match, p1, p2) => {
@@ -70,7 +70,7 @@ function extractElements(codes, fileName, extension, filePath)
 
     while ((match = variableRegex.exec(code)) !== null) {
         if (extension == "js") {
-            let key = match[2];
+            let key = (match[2] && match[2].trim()) ? match[2].trim() : (match[4] && match[4].trim());
             let newKey = key; 
             let count = 1;
             let value = (match[3] && match[3].trim()) ? match[3].trim() : (match[5] && match[5].trim());
@@ -106,7 +106,7 @@ function extractElements(codes, fileName, extension, filePath)
                 value = collectedValue; 
             }     
 
-            if(value == "express()")
+            if(value == "express();")
             {
                 express = newKey;
                 let appListenRegex = new RegExp(`${express}\\.listen\\((.*?)\\)`, 'g');
@@ -117,13 +117,22 @@ function extractElements(codes, fileName, extension, filePath)
                     break;
                 }
             }
-
             if(newKey == expressPortVar)
             {
-                expressURL = `http://localhost:${value}/`
+                expressURL = `http://localhost:${value.replace(';', '')}/`
+            }
+
+            if(express != undefined)
+            {
+                if(key == "get" || key == "post" || key == "put" || key == "delete")
+                {
+                    let valueURL = value.split(',').map(item => item.replace(/'/g, ''));
+                    variables.set("url_"+newKey,  expressURL + key + valueURL[0]);
+                    match[3] = expressURL + key + valueURL[0];
+                }
             }
         
-            variables.set(newKey, value);
+            variables.set(newKey, value.replace(';', ''));
     
             if (match[3].includes("https") || match[3].includes("http")) {
                 const i = match[0].replace(/^\n/, '').replace(/\r\n/g, '');
@@ -137,7 +146,7 @@ function extractElements(codes, fileName, extension, filePath)
                     count++;
                 }
     
-                apiLocations.set(apiNewKey, i); 
+                apiLocations.set(apiNewKey, i + "|" + match[3]); 
 
                 let isPostFound = false;
 
@@ -154,6 +163,19 @@ function extractElements(codes, fileName, extension, filePath)
                         isPostFound = true;
                     } else {
                         types.set(newKey, 'GET');
+                    }
+                }
+
+                if(express != undefined)
+                {
+                    if (newKey == "get") {
+                        types.set("url_"+newKey, 'GET');
+                        isPostFound = true;
+                    } else if (newKey == "post" || newKey == "put" || newKey == "delete") {
+                        types.set("url_"+newKey, 'POST');
+                        let callsvalue = value.split(',').map(item => item.replace(/'/g, ''));
+                        calls.set("url_"+newKey, callsvalue[1] + ',' + callsvalue[2]);
+                        isPostFound = true;
                     }
                 }
 
