@@ -5,7 +5,7 @@ const path = require('path');
 
 async function fetchApiResults(fullURLS, extractedData, extension) {
     const results = new Map();
-    let express = undefined;
+    let express = false;
     for (const [originalUrl, finalUrl] of fullURLS) {
         for (let i = 0; i < extractedData.length; i++) {
             for (const [fileName, fileData] of extractedData[i]) {
