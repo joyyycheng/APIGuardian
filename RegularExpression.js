@@ -1,3 +1,5 @@
+const fs = require('fs');
+const path = require('path');
 
 function extractElements(codes, fileName, extension, filePath)
 {
@@ -194,27 +196,55 @@ function extractElements(codes, fileName, extension, filePath)
                 count++;
             }
 
-            if (value.includes("{") || value.includes("[")) {
-                let block = value; 
+            if (value.includes("{") || value.includes("[") || value.includes('"')) {
+                let block = value;  // The value is stored as a starting point.
                 let braceCount = 0;
-    
+                let quoteCount = 0;
+                
+                // Loop through the characters in the value and count braces and quotes
                 for (let char of value) {
-                    if (char === "{") braceCount++;
-                    if (char === "}") braceCount--;
+                    if (char === "{" || char === "[") braceCount++;
+                    if (char === "}" || char === "]") braceCount--;
+                    if (char === '"') quoteCount++;
                 }
-    
-                let index = variableRegex.lastIndex;
-                while (braceCount !== 0 && index < code.length) {
+                
+                let index = variableRegex.lastIndex;  // Initialize index based on your regex context.
+                
+                // Continue reading the code from the current index until the counts balance.
+                while ((braceCount !== 0 || quoteCount % 2 !== 0) && index < code.length) {
                     let char = code[index++];
-                    block += char;
-    
-                    if (char === "{") braceCount++;
-                    if (char === "}") braceCount--;
+                    block += char;  // Add the character to the block of text.
+                    
+                    if (char === "{" || char === "[") braceCount++;  // Increment brace count.
+                    if (char === "}" || char === "]") braceCount--;  // Decrement brace count.
+                    if (char === '"') quoteCount++;  // Toggle quote count (even quotes mean it's balanced).
                 }
-    
-                value = block;  
+            
+                value = block;  // Now `value` contains the full content with properly balanced braces and quotes.
             }
-    
+            
+
+            if(value.includes("os.getenv"))
+            {
+                fs.readFile(path.join(path.dirname(filePath), ".env"), 'utf8', (err, data) => {
+                    if (err) {
+                        console.error("Error reading file:", err);
+                        return;
+                    }
+                    let match1;
+                    while ((match1 = variableRegex.exec(data)) !== null) {
+                        const regex = /os\.getenv\("([^"]+)"\)/;
+                        const match2 = value.match(regex);
+                        if(match2[1] == match1[1])
+                        {
+                            value = match1[2];
+                            variables.set(newKey, value); 
+                            return;
+                        }
+                    }
+                });
+            }
+
             variables.set(newKey, value); 
     
             if (match[2].includes("https") || match[2].includes("http")) {

@@ -256,7 +256,7 @@ async function searchGoogle(query) {
 }
 
 
-async function generateReport(location, similarTexts, allResults, searchQuery) {
+async function generateReport(location, similarTexts, allResults) {
 
     let templateReport;
     try {

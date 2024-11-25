@@ -113,6 +113,7 @@ function activate(context) {
             }
             try {
                 matchFileInfo(pyFile);
+                console.log(pyFile)
                 let pyResults = matchAPIs(pyFile, "py");
                 apiResults2 = await fetchApiResults(pyResults, pyFile, "py");
                 processFiles(pyFile, apiResults2, "py", context, hoverProviders);
@@ -122,7 +123,6 @@ function activate(context) {
 
             try {
                 matchFileInfo(csFile);
-                console.log(csFile)
                 let csResults = matchAPIs(csFile, "cs");
                 apiResults = await fetchApiResults(csResults, csFile, "cs");
                 processFiles(csFile, apiResults, "cs", context, hoverProviders);
@@ -160,16 +160,24 @@ function activate(context) {
             });
             
             const similarTexts = await findSimilarTexts(statuses);
-            const searchQuery_File = await vscode.window.showInputBox({
-                placeHolder: "What status of the API would you want in the report",
-                prompt: "Success/Error/All",
-                value: ""
-              });
+            vscode.window.withProgress(
+                {
+                    location: vscode.ProgressLocation.Notification,
+                    title: "Checking API Status",
+                    cancellable: false,
+                },
+            async (progress) => {
               
-            generateReport(path.dirname(editor.document.uri.fsPath), similarTexts, [...merged], searchQuery_File);
+            generateReport(path.dirname(editor.document.uri.fsPath), similarTexts, [...merged]);
 
-            vscode.window.showInformationMessage("API status check completed.");
+            vscode.window.showInformationMessage("Report generated at " + path.join(path.dirname(editor.document.uri.fsPath), 'reports'));
+
             });
+            vscode.window.showInformationMessage("API status check completed.");
+
+            });
+
+            
         }
     });
         
