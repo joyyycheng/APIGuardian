@@ -1,6 +1,6 @@
-# firstextension README
+# API Guardian README
 
-This is the README for your extension "firstextension". After writing up a brief description, we recommend including the following sections.
+This extensi
 
 ## Features
 

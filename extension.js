@@ -165,32 +165,8 @@ function activate(context) {
                 prompt: "Success/Error/All",
                 value: ""
               });
-            
-            let mergeResults = [];
-            if(searchQuery_File == "Success")
-            {
-                for(var i  = 0; i < similarTexts.length; i++)
-                {
-                    if(similarTexts[i] == "Positive")
-                    {
-                        mergeResults.push([...merged][i]);
-                    }
-                }
-            } else if(searchQuery_File == "Error")
-            {
-                for(var i  = 0; i < similarTexts.length; i++)
-                {
-                    if(similarTexts[i] == "Negative")
-                    {
-                        mergeResults.push([...merged][i]);
-                    }
-                }
-            }  else
-            {
-                mergeResults = [...merged];
-            }
-
-            generateReport(path.dirname(editor.document.uri.fsPath), mergeResults);
+              
+            generateReport(path.dirname(editor.document.uri.fsPath), similarTexts, [...merged], searchQuery_File);
 
             vscode.window.showInformationMessage("API status check completed.");
             });

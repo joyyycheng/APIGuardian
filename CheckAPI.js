@@ -3,6 +3,9 @@ const vscode = require('vscode');
 const fs = require('fs');
 const path = require('path');
 const request = require('supertest');
+const xlsx = require('xlsx');
+
+
 async function fetchApiResults(fullURLS, extractedData, extension) {
     const results = new Map();
     const results_test = new Map();
@@ -253,25 +256,57 @@ async function searchGoogle(query) {
 }
 
 
-async function generateReport(location, results) {
-    let tableContent = `
-    # API Status Report\n\n
-    --------------------------------\n
-    `;
+async function generateReport(location, similarTexts, allResults, searchQuery) {
+
+    let templateReport;
+    try {
+        templateReport = xlsx.readFile(path.join(__dirname, "\\template\\api_status_report.xlsx"));
+    } catch (error) {
+        console.error("error", error);
+    }
+    
+    const wb = xlsx.utils.book_new();
+    let summaryWS = templateReport.Sheets['Summary'];
+    xlsx.utils.sheet_add_aoa(summaryWS, [[allResults.length]], { origin: "B3" });
+    let success = 0, failed = 0, undefined = 0;
+    let successData = [["url", "location", "message", "status"]], failedData = [], undefinedData = [];
+    
+    for(var i = 0; i < similarTexts.length; i++)
+    {
+        if(similarTexts[i] == "Positive") 
+        {
+            success += 1
+            const { url, location, message, status} = allResults[i][1];
+            successData.push([url, location, message, status])
+        }
+        else if(similarTexts[i] == "Neutral") 
+        {
+            undefined += 1
+            const { url, location, message, status} = allResults[i][1];
+            failedData.push([url, location, message, status])
+        }
+        else if(similarTexts[i] == "Negative") 
+        {
+            failed += 1
+            const { url, location, message, status} = allResults[i][1];
+            undefinedData.push([url, location, message, status])
+        }
+    }
+
+    xlsx.utils.sheet_add_aoa(summaryWS, [[success]], { origin: "B4" });
+    xlsx.utils.sheet_add_aoa(summaryWS, [[failed]], { origin: "B5" });
+    xlsx.utils.sheet_add_aoa(summaryWS, [[undefined]], { origin: "B6" });
+
+    // var ws_success = "Successful"
+    // var ws_failed = "Failed"
+    // var ws_undefined = "Undefined"
+    
+    xlsx.utils.book_append_sheet(wb, summaryWS, 'Summary');
+    const ws_success = xlsx.utils.aoa_to_sheet(successData);
+    xlsx.utils.book_append_sheet(wb, ws_success, 'Success');
 
 
-    results.forEach(result => {
-        const { url, location, message, status} = result[1];
-        tableContent += `
-        API : ${url}\n
-        Location : ${location}\n
-        Status : ${status}\n
-        Message : ${message}\n
-        --------------------------------\n
-        `;
-    });
 
-    const content = `${tableContent}\n\n**End of Report**`;
 
     const now = new Date();
     const day = String(now.getDate()).padStart(2, '0');
@@ -282,16 +317,17 @@ async function generateReport(location, results) {
     const seconds = String(now.getSeconds()).padStart(2, '0');
     const timestamp = `${day}${month}${year}${hours}${minutes}${seconds}`;
 
-    const filePath = path.join(location, 'reports', `api_status_report_${timestamp}.txt`); // Saves in "reports" folder within the project directory
     if (!fs.existsSync(path.join(location, 'reports'))) {
         fs.mkdirSync(path.join(location, 'reports'), { recursive: true });
     }
     
-    // Now write the file
-    fs.writeFile(filePath, content, (err) => {
-        if (err) console.log(err);
-        console.log('API Status Report has been saved at ' + filePath);
-    });
+    try
+    {
+        xlsx.writeFile(wb,path.join(location, 'reports', `api_status_report_${timestamp}.xlsx`));
+    } catch (error)
+    {
+        console.error(error);
+    }
 }
 
 
