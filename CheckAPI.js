@@ -269,7 +269,7 @@ async function generateReport(location, similarTexts, allResults, searchQuery) {
     let summaryWS = templateReport.Sheets['Summary'];
     xlsx.utils.sheet_add_aoa(summaryWS, [[allResults.length]], { origin: "B3" });
     let success = 0, failed = 0, undefined = 0;
-    let successData = [["url", "location", "message", "status"]], failedData = [["url", "location", "message", "status"]], undefinedData = [["url", "location", "message", "status"]];
+    let successData = [["url", "location", "message", "status"]], failedData = [["url", "location", "message", "status"]], undefinedData = [["url", "location", "message", "status"]], allData = [["url", "location", "message", "status"]];
     
     for(var i = 0; i < similarTexts.length; i++)
     {
@@ -283,14 +283,17 @@ async function generateReport(location, similarTexts, allResults, searchQuery) {
         {
             undefined += 1
             const { url, location, message, status} = allResults[i][1];
-            failedData.push([url, location, message, status])
+            undefinedData.push([url, location, message, status])
         }
         else if(similarTexts[i] == "Negative") 
         {
             failed += 1
             const { url, location, message, status} = allResults[i][1];
-            undefinedData.push([url, location, message, status])
+            failedData.push([url, location, message, status])
         }
+        const { url, location, message, status} = allResults[i][1];
+        allData.push([url, location, message, status])
+
     }
 
     xlsx.utils.sheet_add_aoa(summaryWS, [[success]], { origin: "B4" });
@@ -302,11 +305,17 @@ async function generateReport(location, similarTexts, allResults, searchQuery) {
     // var ws_undefined = "Undefined"
     
     xlsx.utils.book_append_sheet(wb, summaryWS, 'Summary');
+    const ws_all = xlsx.utils.aoa_to_sheet(allData);
+    ws_all['A1'].s = { font: { bold: true, sz: 14 }, alignment: { horizontal: 'center' }};
+    xlsx.utils.book_append_sheet(wb, ws_all, 'All');
     const ws_success = xlsx.utils.aoa_to_sheet(successData);
+    ws_success['A1'].s = { font: { bold: true, sz: 14 }, alignment: { horizontal: 'center' }};
     xlsx.utils.book_append_sheet(wb, ws_success, 'Success');
     const ws_failed = xlsx.utils.aoa_to_sheet(failedData);
+    ws_failed['A1'].s = { font: { bold: true, sz: 14 }, alignment: { horizontal: 'center' }};
     xlsx.utils.book_append_sheet(wb, ws_failed, 'Failed');
     const ws_undefined = xlsx.utils.aoa_to_sheet(undefinedData);
+    ws_undefined['A1'].s = { font: { bold: true, sz: 14 }, alignment: { horizontal: 'center' }};
     xlsx.utils.book_append_sheet(wb, ws_undefined, 'Undefined');
 
     const now = new Date();
