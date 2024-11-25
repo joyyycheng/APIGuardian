@@ -1,0 +1,75 @@
+
+    # API Status Report
+
+
+    --------------------------------
+
+    
+        API : https://api.openweathermap.org/data/2.5/weather?q=London&appid=664325f428fa6d02930a45966b860fe4&units=metric
+
+        Location : d:\SIT\Capstone\WeatherApp\WeatherService.cs
+
+        Status : 200
+
+        Message : undefined
+
+        --------------------------------
+
+        
+        API : https://dog.ceo/api/breeds/list/all
+
+        Location : d:\SIT\Capstone\weather.js
+
+        Status : success
+
+        Message : [object Object]
+
+        --------------------------------
+
+        
+        API : undefined
+
+        Location : undefined
+
+        Status : undefined
+
+        Message : undefined
+
+        --------------------------------
+
+        
+        API : undefined
+
+        Location : undefined
+
+        Status : undefined
+
+        Message : undefined
+
+        --------------------------------
+
+        
+        API : undefined
+
+        Location : undefined
+
+        Status : undefined
+
+        Message : undefined
+
+        --------------------------------
+
+        
+        API : undefined
+
+        Location : undefined
+
+        Status : undefined
+
+        Message : undefined
+
+        --------------------------------
+
+        
+
+**End of Report**

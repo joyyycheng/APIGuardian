@@ -2,9 +2,10 @@ const axios = require('axios');
 const vscode = require('vscode');
 const fs = require('fs');
 const path = require('path');
-
+const request = require('supertest');
 async function fetchApiResults(fullURLS, extractedData, extension) {
     const results = new Map();
+    const results_test = new Map();
     let express = false;
     for (const [originalUrl, finalUrl] of fullURLS) {
         for (let i = 0; i < extractedData.length; i++) {
@@ -91,7 +92,7 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
                                 if (match) {
                                     const jsonContent = JSON.parse(match[2]); // The JSON content
                                     transformedOptionsString = {
-                                        method: "POST",  // HTTP method
+                                        method: requestType,  // HTTP method
                                         headers: {
                                           "Content-Type": "application/json"  // Set the content type to JSON
                                         },
@@ -113,14 +114,14 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
                         } else if (header != undefined && field != undefined)
                         {
                             transformedOptionsString = {
-                                method: "POST",  // HTTP method
+                                method: requestType,  // HTTP method
                                 headers: header,  // Set the content type to JSON
                                 body: field // Stringify the data to be sent in the body
                             };
                         } else if(express == true)
                         {
                             transformedOptionsString = {
-                                method: "POST",  // HTTP method
+                                method: requestType,  // HTTP method
                                 headers: {
                                   "Content-Type": "application/json"  // Set the content type to JSON
                                 },
@@ -141,11 +142,24 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
                             if (requestType === "GET") {
                                 response = await fetch(encodedUrl);
                             } else if (requestType === "POST") {
-                                // fetchMock.post(encodedUrl, {
-                                //     status: 200,
-                                //     body: { success: true, message: "Mocked response received!" }
-                                // });
-                                response = await fetch(encodedUrl, transformedOptionsString);
+                                //response = await fetch(encodedUrl, transformedOptionsString);
+                                // this method affected database, what we can do is ask user if they would like to test with or without databaase
+                                // with we keep the current method
+                                // without we use Database-agnostic Testing
+                                try {
+                                    const response1 = await request('https://reqbin.com')[transformedOptionsString.method.toLowerCase()]('/echo/post/json')
+                                    .set(transformedOptionsString.headers)
+                                    .send(transformedOptionsString.body);
+                                    if (!(response1.status >= 200 && response1.status < 300) || response1.body == null) {
+                                        results_test.set(encodedUrl, `${response1.status} : Failed`);
+                                    } else {
+                                        results_test.set(encodedUrl, `${response1.status} : Passed`);
+                                    }
+                                } catch (error) {
+                                    results_test.set(encodedUrl, `FAILED : ${error.message}`);
+                                }
+
+                                response = results_test;
                             }
 
                             if (response) {
@@ -161,7 +175,7 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
                                 markdownString.supportHtml = true;
                                 markdownString.appendMarkdown(`**API Response Details for**: ${encodedUrl}\n\n`);
 
-                                if (data.cod === 200 || data.status === "success" || data.success == "true") {
+                                if ((data.cod >= 200 && data.cod < 300) || data.status === "success" || data.success == "true") {
                                     markdownString.appendMarkdown(`**Status**: <span style="color:var(--vscode-charts-green);">Success/200</span>\n\n`);
                                     results.set(originalUrl, {
                                         markdown: markdownString,
@@ -239,7 +253,7 @@ async function searchGoogle(query) {
 }
 
 
-async function generateReport(results) {
+async function generateReport(location, results) {
     let tableContent = `
     # API Status Report\n\n
     --------------------------------\n
@@ -268,10 +282,9 @@ async function generateReport(results) {
     const seconds = String(now.getSeconds()).padStart(2, '0');
     const timestamp = `${day}${month}${year}${hours}${minutes}${seconds}`;
 
-    const filePath = path.join(__dirname, 'reports', `api_status_report_${timestamp}.txt`); // Saves in "reports" folder within the project directory
-    const dirPath = path.dirname(filePath);
-    if (!fs.existsSync(dirPath)) {
-        fs.mkdirSync(dirPath, { recursive: true });
+    const filePath = path.join(location, 'reports', `api_status_report_${timestamp}.txt`); // Saves in "reports" folder within the project directory
+    if (!fs.existsSync(path.join(location, 'reports'))) {
+        fs.mkdirSync(path.join(location, 'reports'), { recursive: true });
     }
     
     // Now write the file

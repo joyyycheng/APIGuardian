@@ -1,0 +1,42 @@
+
+    # API Status Report
+
+
+    --------------------------------
+
+    
+        API : https://api.openweathermap.org/data/2.5/weather?q=Maaysia&appid=664325f428fa6d02930a45966b860fe4&units=metric
+
+        Location : d:\SIT\Capstone\weather.js
+
+        Status : 404
+
+        Message : city not found
+
+        --------------------------------
+
+        
+        API : undefined
+
+        Location : undefined
+
+        Status : undefined
+
+        Message : undefined
+
+        --------------------------------
+
+        
+        API : https://reqbin.com/echo/post/json%22%0A%0D%0Aconst%20data%20=%20%7B%0D%0A%20%20%20%20%22Id%22:%2078912,%0D%0A%20%20%20%20%22Customer%22:%20%22Jason%20Sweet%22,%0D%0A%20%20%20%20%22Quantity%22:%201,%0D%0A%20%20%20%20%22Price%22:%2018.00%0D%0A%20%20%7D%0D%0A%20%20%0D%0A%20%20%0D%0A%0D%0Aconst%20options%20=%20%7B%0D%0A%20%20%20%20method:%20%22POST%22,%0D%0A%20%20%20%20headers:%20%7B%0D%0A%20%20%20%20%20%20%20%20%22Content-Type%22:%20%22application/json%22%0D%0A%20%20%20%20%7D,%0D%0A%20%20%20%20body:%20JSON.stringify(data)%0D%0A%7D
+
+        Location : d:\SIT\Capstone\postapi.js
+
+        Status : undefined
+
+        Message : undefined
+
+        --------------------------------
+
+        
+
+**End of Report**

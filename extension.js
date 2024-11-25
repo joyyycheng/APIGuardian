@@ -8,6 +8,7 @@ const { matchFileInfo } = require('./FileMatch');
 const { matchAPIs } = require('./FindAPI');
 const { processFiles } = require('./HighlightandMessage');
 const { fetchApiResults, generateReport } = require('./CheckAPI');
+const { findSimilarTexts } = require('./IntentClassification');
 /**
  * @param {vscode.ExtensionContext} context
  */
@@ -138,8 +139,58 @@ function activate(context) {
                 console.error("Error processing PHP files:", error);
             }
 
-            var merged = new Set([...apiResults, ...apiResults1, ...apiResults2 , ...apiResults3]);
-            generateReport(merged);
+            const safeMerge = (...maps) => {
+                const mergedMap = new Map();
+                maps.filter(map => map !== undefined && map !== null).forEach(map => {
+                    map.forEach((value, key) => {
+                        mergedMap.set(key, value);
+                    });
+                });
+                return mergedMap;
+            };
+            
+            // Example usage
+            const merged = safeMerge(apiResults, apiResults1, apiResults2, apiResults3);
+            
+            let statuses = [];
+            merged.forEach((value, key) => {
+                if (value) { // Safely check for the `status` field
+                    statuses.push(value.status);
+                }
+            });
+            
+            const similarTexts = await findSimilarTexts(statuses);
+            const searchQuery_File = await vscode.window.showInputBox({
+                placeHolder: "What status of the API would you want in the report",
+                prompt: "Success/Error/All",
+                value: ""
+              });
+            
+            let mergeResults = [];
+            if(searchQuery_File == "Success")
+            {
+                for(var i  = 0; i < similarTexts.length; i++)
+                {
+                    if(similarTexts[i] == "Positive")
+                    {
+                        mergeResults.push([...merged][i]);
+                    }
+                }
+            } else if(searchQuery_File == "Error")
+            {
+                for(var i  = 0; i < similarTexts.length; i++)
+                {
+                    if(similarTexts[i] == "Negative")
+                    {
+                        mergeResults.push([...merged][i]);
+                    }
+                }
+            }  else
+            {
+                mergeResults = [...merged];
+            }
+
+            generateReport(path.dirname(editor.document.uri.fsPath), mergeResults);
 
             vscode.window.showInformationMessage("API status check completed.");
             });

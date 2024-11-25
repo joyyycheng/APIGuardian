@@ -35,7 +35,7 @@ function extractElements(codes, fileName, extension, filePath)
             variableRegex = /^\s*(public|private|protected)?\s*(static\s+)?\$(\w+)\s*=\s*(.*)$/gm;
             functionRegex = /^\s*(public|private|protected)?\s*(static\s+)?function\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\((.*?)\)\s*{/gm;
             importRegex = /\b([a-zA-Z_][a-zA-Z0-9_]*)::([a-zA-Z_][a-zA-Z0-9_]*)\((.*?)\);/gm;
-            typeRegex = /.*POST.*true.*/;
+            typeRegex = /curl_setopt\s*\(\s*\$[a-zA-Z_][\w]*,\s*CURLOPT_CUSTOMREQUEST,\s*"([^"]*)"/g;
             headerRegex = /CURLOPT_HTTPHEADER\s*,\s*(\$\w+)/g;
             fieldRegex = /CURLOPT_POSTFIELDS\s*,\s*(\$\w+)/g;
             break;
@@ -231,14 +231,18 @@ function extractElements(codes, fileName, extension, filePath)
                 let isPostFound = false;
 
                 while ((match = typeRegex.exec(codes)) !== null) {
-                    const fetchArgs = match["input"].trim();
+                    const fetchArgs = match[1].trim();
                     
-                    let args = fetchArgs.split(',');
-
-                    args = args.map(arg => arg.trim());
-
-                    if (args.length > 1) {
+                    if (fetchArgs.startsWith('.post')) {
                         types.set(newKey, 'POST');
+                        calls.set(newKey, match[1]);
+                        isPostFound = true;
+                    } else if(fetchArgs.startsWith('.put')) {
+                        types.set(newKey, 'PUT');
+                        calls.set(newKey, match[1]);
+                        isPostFound = true;
+                    } else if(fetchArgs.startsWith('.delete')) {
+                        types.set(newKey, 'DELETE');
                         calls.set(newKey, match[1]);
                         isPostFound = true;
                     } else {
@@ -339,7 +343,7 @@ function extractElements(codes, fileName, extension, filePath)
                 let isPostFound = false;
 
                 while ((match = typeRegex.exec(codes)) !== null) {
-                    types.set(newKey, 'POST');
+                    types.set(newKey, match[1]);
                     isPostFound = true;
                     break;
                 }
