@@ -269,7 +269,7 @@ async function generateReport(location, similarTexts, allResults, searchQuery) {
     let summaryWS = templateReport.Sheets['Summary'];
     xlsx.utils.sheet_add_aoa(summaryWS, [[allResults.length]], { origin: "B3" });
     let success = 0, failed = 0, undefined = 0;
-    let successData = [["url", "location", "message", "status"]], failedData = [], undefinedData = [];
+    let successData = [["url", "location", "message", "status"]], failedData = [["url", "location", "message", "status"]], undefinedData = [["url", "location", "message", "status"]];
     
     for(var i = 0; i < similarTexts.length; i++)
     {
@@ -304,9 +304,10 @@ async function generateReport(location, similarTexts, allResults, searchQuery) {
     xlsx.utils.book_append_sheet(wb, summaryWS, 'Summary');
     const ws_success = xlsx.utils.aoa_to_sheet(successData);
     xlsx.utils.book_append_sheet(wb, ws_success, 'Success');
-
-
-
+    const ws_failed = xlsx.utils.aoa_to_sheet(failedData);
+    xlsx.utils.book_append_sheet(wb, ws_failed, 'Failed');
+    const ws_undefined = xlsx.utils.aoa_to_sheet(undefinedData);
+    xlsx.utils.book_append_sheet(wb, ws_undefined, 'Undefined');
 
     const now = new Date();
     const day = String(now.getDate()).padStart(2, '0');
