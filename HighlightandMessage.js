@@ -57,14 +57,22 @@ function processFiles(fileData, apiData, fileType, context, hoverProviders) {
 }
 
 function highlightMatchesInFile(matches, context, hoverProviders) {
-    const editor = vscode.window.activeTextEditor;
-    if (!editor) {
-        return; // No editor is active
-    }
+
 
     const ranges = []; // Store all ranges to highlight
+    const indicatorLine = [];
     const hoverData = new Map(); // To store hover text based on range
+    const editor = vscode.window.activeTextEditor;
+        
+    const decorationType = vscode.window.createTextEditorDecorationType({
+        before: {
+            contentText: '➡️',  // Unicode for an arrow
+            color: 'blue',      // Optional: You can change the color
+            margin: '0 1em 0 0' // Optional: Adjust the spacing around the arrow
+        }
+    });
 
+    
     for (const { document, keyToHighlight, text } of matches) {
         for (let line = 0; line < document.lineCount; line++) {
             const lineText = document.lineAt(line).text.trim();
@@ -81,7 +89,6 @@ function highlightMatchesInFile(matches, context, hoverProviders) {
         }
     }
 
-    //editor.setDecorations(decorationType, ranges);
 
     const documentUri = matches[0].document.uri.toString(); // Get the URI from the first match
     if (!hoverProviders.has(documentUri)) {
@@ -100,6 +107,20 @@ function highlightMatchesInFile(matches, context, hoverProviders) {
                 return null; // No hover information
             }
         });
+
+        
+        // vscode.window.onDidChangeActiveTextEditor(editor => {
+        //     if (editor) {
+        //         const visibleRanges = editor.visibleRanges;
+        //         // Reapply decoration for each stored range that should still be visible
+        //         indicatorLine.forEach(range => {
+        //             // Check if the range is still in the visible area of the editor
+        //             if (visibleRanges.some(v => v.intersection(range))) {
+        //                 editor.setDecorations(decorationType, [range]);
+        //             }
+        //         });
+        //     }
+        // });
 
         hoverProviders.set(documentUri, hoverProvider);
         context.subscriptions.push(hoverProvider);

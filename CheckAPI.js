@@ -145,24 +145,24 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
                             if (requestType === "GET") {
                                 response = await fetch(encodedUrl);
                             } else if (requestType === "POST") {
-                                //response = await fetch(encodedUrl, transformedOptionsString);
+                                response = await fetch(encodedUrl, transformedOptionsString);
                                 // this method affected database, what we can do is ask user if they would like to test with or without databaase
                                 // with we keep the current method
                                 // without we use Database-agnostic Testing
-                                try {
-                                    const response1 = await request('https://reqbin.com')[transformedOptionsString.method.toLowerCase()]('/echo/post/json')
-                                    .set(transformedOptionsString.headers)
-                                    .send(transformedOptionsString.body);
-                                    if (!(response1.status >= 200 && response1.status < 300) || response1.body == null) {
-                                        results_test.set(encodedUrl, `${response1.status} : Failed`);
-                                    } else {
-                                        results_test.set(encodedUrl, `${response1.status} : Passed`);
-                                    }
-                                } catch (error) {
-                                    results_test.set(encodedUrl, `FAILED : ${error.message}`);
-                                }
+                                // try {
+                                //     const response1 = await request('https://reqbin.com')[transformedOptionsString.method.toLowerCase()]('/echo/post/json')
+                                //     .set(transformedOptionsString.headers)
+                                //     .send(transformedOptionsString.body);
+                                //     if (!(response1.status >= 200 && response1.status < 300) || response1.body == null) {
+                                //         results_test.set(encodedUrl, `${response1.status} : Failed`);
+                                //     } else {
+                                //         results_test.set(encodedUrl, `${response1.status} : Passed`);
+                                //     }
+                                // } catch (error) {
+                                //     results_test.set(encodedUrl, `FAILED : ${error.message}`);
+                                // }
 
-                                response = results_test;
+                                // response = results_test;
                             }
 
                             if (response) {
@@ -199,7 +199,6 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
                                     markdownString.appendMarkdown(`**Recommended Fix (from ${GoogleResults[0].displayLink})**:\n\n`);
                                     markdownString.appendMarkdown(`**Title**: ${GoogleResults[0].title}\n\n`);
                                     markdownString.appendMarkdown(`**Link**: [${GoogleResults[0].link}](${GoogleResults[0].link})\n\n`);
-                                    vscode.window.showInformationMessage(encodedUrl + " has an error");
                                     results.set(originalUrl, {
                                         markdown: markdownString,
                                         url : encodedUrl,

@@ -114,7 +114,6 @@ function extractElements(codes, fileName, extension, filePath)
                 let appListenRegex = new RegExp(`${express}\\.listen\\((.*?)\\)`, 'g');
                 let match1;
                 while ((match1 = appListenRegex.exec(code)) !== null) {
-                    console.log(match1);
                     expressPortVar = match1[1].trim().split(',')[0];
                     break;
                 }
@@ -132,6 +131,27 @@ function extractElements(codes, fileName, extension, filePath)
                     variables.set("url_"+newKey,  expressURL + key + valueURL[0]);
                     match[3] = expressURL + key + valueURL[0];
                 }
+            }
+
+            if(value.includes("process.env."))
+            {
+                fs.readFile(path.join(path.dirname(filePath), ".env"), 'utf8', (err, data) => {
+                    if (err) {
+                        console.error("Error reading file:", err);
+                        return;
+                    }
+                    let match1;
+                    while ((match1 = variableRegex.exec(data)) !== null) {
+                        const regex = /process\.env\.([^"]+)/;
+                        const match2 = value.match(regex);
+                        if(match2[1] == match1[1])
+                        {
+                            value = match1[2];
+                            variables.set(newKey, value); 
+                            return;
+                        }
+                    }
+                });
             }
         
             variables.set(newKey, value.replace(';', ''));

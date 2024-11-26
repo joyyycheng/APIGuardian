@@ -1,6 +1,6 @@
 # API Guardian README
 
-This extensi
+This extension will help to check all the available api endpoints that are found in your code. 
 
 ## Features
 

@@ -9,6 +9,7 @@ const { matchAPIs } = require('./FindAPI');
 const { processFiles } = require('./HighlightandMessage');
 const { fetchApiResults, generateReport } = require('./CheckAPI');
 const { findSimilarTexts } = require('./IntentClassification');
+const { accessDatabase } = require('./Database');
 /**
  * @param {vscode.ExtensionContext} context
  */
@@ -34,13 +35,26 @@ function activate(context) {
                     prompt: "File Name 1 | File Name 2",
                     value: ""
                     });
-            } else 
+            } else if (searchQuery == "Scan")
             {
                 search1Query = await vscode.window.showInputBox({
                     placeHolder: "Which files would you like to scan ( use | as a separator if there are multiple )",
                     prompt: "File Name 1 | File Name 2",
                     value: ""
                     });
+            } else 
+            {
+                vscode.window.showInformationMessage('You have exited the application');
+                return;
+            }
+            const searchQuery_DB = await vscode.window.showInputBox({
+                placeHolder: "Y/N",
+                prompt: "Do you need a database ( if yes, please create a txt file 'API_GUARDIAN_DATABASE.txt' with the requried information for connection)",
+                value: ""
+            });
+            if(searchQuery_DB == "Y")
+            {
+                accessDatabase();
             }
             const searchArray = search1Query.split('|').map(item => item.trim());
 
@@ -170,9 +184,8 @@ function activate(context) {
               
             generateReport(path.dirname(editor.document.uri.fsPath), similarTexts, [...merged]);
 
-            vscode.window.showInformationMessage("Report generated at " + path.join(path.dirname(editor.document.uri.fsPath), 'reports'));
-
             });
+            vscode.window.showInformationMessage("Report generated at " + path.join(path.dirname(editor.document.uri.fsPath), 'reports'));
             vscode.window.showInformationMessage("API status check completed.");
 
             });
