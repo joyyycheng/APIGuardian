@@ -143,14 +143,15 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
 
                             // Perform GET or POST based on the request type
                             if (requestType === "GET") {
-                                response = await fetch(encodedUrl);
-                            } else if (requestType === "POST") {
+                                response = await fetch(encodedUrl +"?database=my_database_test");
+                                console.log('Items from test database:', response.data);
+                            } else if (requestType === "POST" || requestType === "PUT" || requestType === "DELETE") {
                                 response = await fetch(encodedUrl, transformedOptionsString);
                                 // this method affected database, what we can do is ask user if they would like to test with or without databaase
                                 // with we keep the current method
                                 // without we use Database-agnostic Testing
                                 // try {
-                                //     const response1 = await request('https://reqbin.com')[transformedOptionsString.method.toLowerCase()]('/echo/post/json')
+                                //     const response1 = await request('http://localhost:3000')[transformedOptionsString.method.toLowerCase()]('/items')
                                 //     .set(transformedOptionsString.headers)
                                 //     .send(transformedOptionsString.body);
                                 //     if (!(response1.status >= 200 && response1.status < 300) || response1.body == null) {
@@ -161,30 +162,22 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
                                 // } catch (error) {
                                 //     results_test.set(encodedUrl, `FAILED : ${error.message}`);
                                 // }
-
-                                // response = results_test;
                             }
 
                             if (response) {
                                 let data;
-                                if(express == false)
-                                {
-                                    data = await response.json();
-                                } else if(express == true)
-                                {
-                                    data = await response.text();
-                                }
+                                data = await response.json();
                                 const markdownString = new vscode.MarkdownString();
                                 markdownString.supportHtml = true;
                                 markdownString.appendMarkdown(`**API Response Details for**: ${encodedUrl}\n\n`);
 
-                                if ((data.cod >= 200 && data.cod < 300) || data.status === "success" || data.success == "true") {
+                                if ((data.cod >= 200 && data.cod < 300) || data.status === "success" || data.success == "true" || response.status == 200) {
                                     markdownString.appendMarkdown(`**Status**: <span style="color:var(--vscode-charts-green);">Success/200</span>\n\n`);
                                     results.set(originalUrl, {
                                         markdown: markdownString,
                                         url : encodedUrl,
                                         location: fileData.filePath,
-                                        status : data.cod || data.status || data.success,
+                                        status : data.cod || data.status || data.success || response.status,
                                         message: data.message,
                                     });
                                 } else {

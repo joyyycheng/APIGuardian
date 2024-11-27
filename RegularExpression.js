@@ -120,7 +120,7 @@ function extractElements(codes, fileName, extension, filePath)
             }
             if(newKey == expressPortVar)
             {
-                expressURL = `http://localhost:${value.replace(';', '')}/`
+                expressURL = `http://localhost:${value.replace(';', '')}`
             }
 
             if(express != undefined)
@@ -128,8 +128,8 @@ function extractElements(codes, fileName, extension, filePath)
                 if(key == "get" || key == "post" || key == "put" || key == "delete")
                 {
                     let valueURL = value.split(',').map(item => item.replace(/'/g, ''));
-                    variables.set("url_"+newKey,  expressURL + key + valueURL[0]);
-                    match[3] = expressURL + key + valueURL[0];
+                    variables.set("url_"+newKey,  expressURL + valueURL[0]);
+                    match[3] = expressURL + valueURL[0];
                 }
             }
 

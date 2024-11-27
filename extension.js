@@ -9,7 +9,7 @@ const { matchAPIs } = require('./FindAPI');
 const { processFiles } = require('./HighlightandMessage');
 const { fetchApiResults, generateReport } = require('./CheckAPI');
 const { findSimilarTexts } = require('./IntentClassification');
-const { accessDatabase } = require('./Database');
+const { accessDatabase_SQL, DeleteDatabase } = require('./Database');
 /**
  * @param {vscode.ExtensionContext} context
  */
@@ -54,7 +54,7 @@ function activate(context) {
             });
             if(searchQuery_DB == "Y")
             {
-                accessDatabase();
+                accessDatabase_SQL();
             }
             const searchArray = search1Query.split('|').map(item => item.trim());
 
@@ -183,6 +183,7 @@ function activate(context) {
             async (progress) => {
               
             generateReport(path.dirname(editor.document.uri.fsPath), similarTexts, [...merged]);
+            //DeleteDatabase();
 
             });
             vscode.window.showInformationMessage("Report generated at " + path.join(path.dirname(editor.document.uri.fsPath), 'reports'));

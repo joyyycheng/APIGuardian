@@ -1,27 +1,69 @@
 const vscode = require('vscode');
-var sql = require("mssql/msnodesqlv8")
+const mysql = require('mysql2');
 
-console.log(sql);
 
-async function accessDatabase()
+
+async function accessDatabase_SQL()
 {
-    // let files = [];
-    // files = await vscode.workspace.findFiles("API_GUARDIAN_DATABASE.json");
-    // const document = await vscode.workspace.openTextDocument(files[0]);
-    // const content = JSON.parse(document.getText());
+    const file = await vscode.workspace.findFiles("API_GUARDIAN_DB.json");
+    const document = await vscode.workspace.openTextDocument(file[0]);
+    const fileContent = document.getText();
 
-    // const connectionString = "Server=LENOVO-PF2858JS\\MSSQLSERVER2019;Database=API_Guardian_test;Integrated Security=True;Driver={SQL Server Native Client 11.0}"
+    const jsonContent = JSON.parse(fileContent);
+    const database = jsonContent.database;
 
-    // try{
-    //     await sql.connect(connectionString)
+    const connection = mysql.createConnection(jsonContent);
 
-    //     const row =  sql.query("SELECT * FROM userinfo");
-    //     consol
-    // } catch (error)
-    // {
-    //     console.log(error);
-    // }
+    const getTablesQuery = `
+            SELECT table_name
+            FROM information_schema.tables
+            WHERE table_schema = '${database}';
+        `;
+    return new Promise((resolve, reject) => {
+        connection.query(getTablesQuery, (err, results) => {
+            if (err) throw err;
+            const createDatabaseQuery = `CREATE DATABASE IF NOT EXISTS \`${database}_test\``;
+            connection.query(createDatabaseQuery, (err1, tables) => {
+                if (err1) throw err1;
+                results.forEach((table) => {
+                    const tableName = table.TABLE_NAME;
+                    const copyTableQuery = `
+                    CREATE TABLE ${database}_test.${tableName} AS SELECT * FROM ${database}.${tableName};
+                    `;
+    
+                    connection.query(copyTableQuery, (err) => {
+                        if (err) throw err;
+                        console.log(`Table ${tableName} copied successfully.`);
+                    });
+                });
+            });
+          });
+    }).finally(() => {
+    });
 
+    
 }
 
-module.exports = { accessDatabase };
+async function DeleteDatabase()
+{
+    const file = await vscode.workspace.findFiles("API_GUARDIAN_DB.json");
+    const document = await vscode.workspace.openTextDocument(file[0]);
+    const fileContent = document.getText();
+
+    const jsonContent = JSON.parse(fileContent);
+    const database = jsonContent.database;
+
+    const connection = mysql.createConnection(jsonContent);
+
+    const dropDatabaseQuery = `DROP DATABASE IF EXISTS \`${database}_test\``;
+    connection.query(dropDatabaseQuery, (err, results) => {
+        if (err) {
+            console.error('Error deleting the database:', err);
+            return;
+        }
+        console.log('Database deleted successfully');
+    });
+}
+
+
+module.exports = { accessDatabase_SQL , DeleteDatabase };
