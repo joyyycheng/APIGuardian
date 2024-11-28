@@ -1,7 +1,7 @@
 const vscode = require('vscode');
 const mysql = require('mysql2');
 
-
+let terminal;
 
 async function accessDatabase_SQL()
 {
@@ -10,6 +10,33 @@ async function accessDatabase_SQL()
     const fileContent = document.getText();
 
     const jsonContent = JSON.parse(fileContent);
+    const dbtype = jsonContent.DB_TYPE;
+    const command = jsonContent.command;
+
+    delete jsonContent.DB_TYPE;
+    delete jsonContent.command;
+
+    if(dbtype == "mysql")
+    {
+        accessDatabase_MYSQL(jsonContent);
+    }
+
+
+    terminal = vscode.window.createTerminal({
+        name: 'API Guardian Terminal',
+    });
+
+
+    // Send the server start command to the terminal
+    terminal.sendText(command);
+
+    // Show the terminal to the user
+    terminal.show();
+    
+}
+
+async function accessDatabase_MYSQL(jsonContent)
+{
     const database = jsonContent.database;
 
     const connection = mysql.createConnection(jsonContent);
@@ -39,9 +66,7 @@ async function accessDatabase_SQL()
             });
           });
     }).finally(() => {
-    });
-
-    
+    });    
 }
 
 async function DeleteDatabase()
@@ -56,12 +81,18 @@ async function DeleteDatabase()
     const connection = mysql.createConnection(jsonContent);
 
     const dropDatabaseQuery = `DROP DATABASE IF EXISTS \`${database}_test\``;
+    return new Promise((resolve, reject) => {
     connection.query(dropDatabaseQuery, (err, results) => {
         if (err) {
             console.error('Error deleting the database:', err);
             return;
         }
         console.log('Database deleted successfully');
+    });
+
+    terminal.sendText('\u0003'); // Ctrl+C
+    terminal.dispose();
+    terminal = null;
     });
 }
 

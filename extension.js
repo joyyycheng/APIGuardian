@@ -47,15 +47,15 @@ function activate(context) {
                 vscode.window.showInformationMessage('You have exited the application');
                 return;
             }
-            const searchQuery_DB = await vscode.window.showInputBox({
-                placeHolder: "Y/N",
-                prompt: "Do you need a database ( if yes, please create a txt file 'API_GUARDIAN_DATABASE.txt' with the requried information for connection)",
-                value: ""
-            });
-            if(searchQuery_DB == "Y")
-            {
-                accessDatabase_SQL();
-            }
+            // const searchQuery_DB = await vscode.window.showInputBox({
+            //     placeHolder: "Y/N",
+            //     prompt: "Do you need a database ( if yes, please create a txt file 'API_GUARDIAN_DATABASE.txt' with the requried information for connection)",
+            //     value: ""
+            // });
+            // if(searchQuery_DB == "Y")
+            // {
+            //     accessDatabase_SQL();
+            // }
             const searchArray = search1Query.split('|').map(item => item.trim());
 
             vscode.window.withProgress(
@@ -117,6 +117,7 @@ function activate(context) {
                         break;
                 }
             }
+
             try {
                 matchFileInfo(jsFile);
                 let jsResults = matchAPIs(jsFile, "js");

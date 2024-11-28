@@ -143,7 +143,7 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
 
                             // Perform GET or POST based on the request type
                             if (requestType === "GET") {
-                                response = await fetch(encodedUrl +"?database=my_database_test");
+                                response = await fetch(encodedUrl);
                                 console.log('Items from test database:', response.data);
                             } else if (requestType === "POST" || requestType === "PUT" || requestType === "DELETE") {
                                 response = await fetch(encodedUrl, transformedOptionsString);
