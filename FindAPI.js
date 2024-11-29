@@ -68,6 +68,7 @@ function matchAPIs(extractedData, extension)
             }
 
             let newURLS = processUrls(urls, extension);
+            let count  = 1;
             
             for(let i = 0; i < newURLS.length; i++){
                 for (const [key, value] of variableValues) {
@@ -92,11 +93,15 @@ function matchAPIs(extractedData, extension)
                         const regex = /\ . self::/;  
                         if(regex.test(newURLS[i]))
                         {
-                            newURLS[i] = newURLS[i].replace(`\ . self::${key} . `, value); // Replace self::$key with value
+                            newURLS[i] = newURLS[i].replace(`\" . self::${key} . "`, value); // Replace self::$key with value
                         } 
                         newURLS[i] = newURLS[i].replace(`\{${key}}`, value); // Create a new string with the replaced value
 
                     }
+                }
+                while (APIurls.has(urls[i])) {
+                    urls[i] = `${count}_${urls[i]}`; 
+                    count++;
                 }
                 APIurls.set(urls[i], newURLS[i]);
             }

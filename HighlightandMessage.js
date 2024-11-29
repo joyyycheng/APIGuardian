@@ -24,7 +24,14 @@ function processFiles(fileData, apiData, fileType, context, hoverProviders) {
                         {
                             newVal = value1.split('|')[1].trim();
                         }
-                        if (newVal.includes(key)) {
+
+                        const newURL = key.match(/https?:\/\//i);
+                        let url;
+                        if(newURL)
+                        {
+                            url = key.substring(newURL.index)
+                        }
+                        if (newVal.includes(url)) {
 
                             const fileUri = vscode.Uri.file(fileURL);
 

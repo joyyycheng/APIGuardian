@@ -4,17 +4,24 @@ const fs = require('fs');
 const path = require('path');
 const request = require('supertest');
 const xlsx = require('xlsx');
+const unit = require('unit.js');
 
 
 async function fetchApiResults(fullURLS, extractedData, extension) {
     const results = new Map();
-    const results_test = new Map();
     let express = false;
+    let count = 0;
     for (const [originalUrl, finalUrl] of fullURLS) {
         for (let i = 0; i < extractedData.length; i++) {
             for (const [fileName, fileData] of extractedData[i]) {
                 for (const [varKey, varValue] of fileData.variables) {
-                    if (varValue === originalUrl) {
+                    const newURL = originalUrl.match(/https?:\/\//i);
+                    let url;
+                    if(newURL)
+                    {
+                        url = originalUrl.substring(newURL.index)
+                    }
+                    if (varValue === url) {
                         if (extension === "js" && fileData.variables.has("express")) {
                             express = true;
                         }                        
@@ -137,66 +144,87 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
                         const cleanUrl = urlVariable.replace(/^f|^'|'$|^`|`$|^"|"$|^'/g, '').trim();
                         const result = cleanUrl.replace(/^['"`]*/, '').replace(/['"`]*$/, '').trim();
                         const encodedUrl = encodeURI(result);
+                        // Create a new URL object from the encoded URL
+                        const url = new URL(encodedUrl);
+                        const baseURL = url.origin;
+                        const path = url.pathname + url.search;
 
                         try {
                             let response = '';
+                            const results_test = new Map();
 
                             // Perform GET or POST based on the request type
                             if (requestType === "GET") {
-                                response = await fetch(encodedUrl);
-                                console.log('Items from test database:', response.data);
+                                //response = await fetch(encodedUrl);
+                                try {
+                                    const response1 = await request(baseURL)['get'](path)
+                                    results_test.set(`${requestType}_${encodedUrl}`, { status:`${response1.status}`, message: `${response1.message || response1.body.message}`});
+                                } catch (error) {
+                                    results_test.set(`${requestType}_${encodedUrl}`, { status:`${response1.status}`, message: `${error.message}`});
+                                }
+
+                                response = results_test;
                             } else if (requestType === "POST" || requestType === "PUT" || requestType === "DELETE") {
-                                response = await fetch(encodedUrl, transformedOptionsString);
+                                //response = await fetch(encodedUrl, transformedOptionsString);
                                 // this method affected database, what we can do is ask user if they would like to test with or without databaase
                                 // with we keep the current method
                                 // without we use Database-agnostic Testing
-                                // try {
-                                //     const response1 = await request('http://localhost:3000')[transformedOptionsString.method.toLowerCase()]('/items')
-                                //     .set(transformedOptionsString.headers)
-                                //     .send(transformedOptionsString.body);
-                                //     if (!(response1.status >= 200 && response1.status < 300) || response1.body == null) {
-                                //         results_test.set(encodedUrl, `${response1.status} : Failed`);
-                                //     } else {
-                                //         results_test.set(encodedUrl, `${response1.status} : Passed`);
-                                //     }
-                                // } catch (error) {
-                                //     results_test.set(encodedUrl, `FAILED : ${error.message}`);
-                                // }
+                                try {
+                                    const response1 = await request(baseURL)[transformedOptionsString.method.toLowerCase()](path)
+                                    .set(transformedOptionsString.headers)
+                                    .send(transformedOptionsString.body);
+                                    results_test.set(`${requestType}_${encodedUrl}`, { status:`${response1.status}`, message: `${response1.message || response1.body.message}`});
+                                } catch (error) {
+                                    results_test.set(`${requestType}_${encodedUrl}`, { status:`${response1.status}`, message: `${error.message}`});
+                                }
+
+                                response = results_test;
                             }
 
                             if (response) {
                                 let data;
-                                data = await response.json();
+                                //data = await response.json();
+                                data =  response.get(`${requestType}_${encodedUrl}`)
                                 const markdownString = new vscode.MarkdownString();
                                 markdownString.supportHtml = true;
                                 markdownString.appendMarkdown(`**API Response Details for**: ${encodedUrl}\n\n`);
+                                
 
-                                if ((data.cod >= 200 && data.cod < 300) || data.status === "success" || data.success == "true" || response.status == 200) {
+                                if ((parseInt(data.status) >= 200 && parseInt(data.status) < 300) || data.status === "success" || data.success == "true") {
                                     markdownString.appendMarkdown(`**Status**: <span style="color:var(--vscode-charts-green);">Success/200</span>\n\n`);
-                                    results.set(originalUrl, {
+                                    let newOriginlURL = originalUrl;
+                                    while (results.has(originalUrl)) {
+                                        newOriginlURL = `${count}_${originalUrl}`; 
+                                        count++;
+                                    }
+                                    results.set(newOriginlURL, {
                                         markdown: markdownString,
                                         url : encodedUrl,
                                         location: fileData.filePath,
-                                        status : data.cod || data.status || data.success || response.status,
+                                        status : data.status,
                                         message: data.message,
                                     });
                                 } else {
-                                    const baseUrl = encodedUrl.split("/")[2];
-                                    const GoogleResults = await searchGoogle(baseUrl + " " + data.message);
-                                    const GoogleResults_OfficialDocumentation = await searchGoogle("Search for Official API Documentation for " + baseUrl);
+                                    const GoogleResults = await searchGoogle(baseURL + " " + data.message);
+                                    const GoogleResults_OfficialDocumentation = await searchGoogle("Search for Official API Documentation for " + baseURL);
                                     
-                                    markdownString.appendMarkdown(`**Status**: <span style="color:var(--vscode-charts-red);">${data.cod}</span>\n\n`);
-                                    markdownString.appendMarkdown(`**API Name**: ${baseUrl}\n\n`);
+                                    markdownString.appendMarkdown(`**Status**: <span style="color:var(--vscode-charts-red);">${data.status}</span>\n\n`);
+                                    markdownString.appendMarkdown(`**API Name**: ${baseURL}\n\n`);
                                     markdownString.appendMarkdown(`**Official API Link**: [Link](${GoogleResults_OfficialDocumentation[0].link})\n\n`);
                                     markdownString.appendMarkdown(`**Message**: ${data.message}\n\n`);
                                     markdownString.appendMarkdown(`**Recommended Fix (from ${GoogleResults[0].displayLink})**:\n\n`);
                                     markdownString.appendMarkdown(`**Title**: ${GoogleResults[0].title}\n\n`);
                                     markdownString.appendMarkdown(`**Link**: [${GoogleResults[0].link}](${GoogleResults[0].link})\n\n`);
-                                    results.set(originalUrl, {
+                                    let newOriginlURL = originalUrl;
+                                    while (results.has(originalUrl)) {
+                                        newOriginlURL = `${count}_${originalUrl}`; 
+                                        count++;
+                                    }
+                                    results.set(newOriginlURL, {
                                         markdown: markdownString,
                                         url : encodedUrl,
                                         location: fileData.filePath,
-                                        status : data.cod || data.status,
+                                        status : data.status,
                                         message: data.message,
                                     }
                                     );

@@ -22,11 +22,14 @@ function activate(context) {
         clearHoverProviders();
         const editor = vscode.window.activeTextEditor;
         if (editor) {
-            const searchQuery = await vscode.window.showInputBox({
-                placeHolder: "Skip Files or Scan Files",
-                prompt: "Skip/Scan",
-                value: ""
-              });
+            const searchQuery = await vscode.window.showQuickPick(
+                ['Skip', 'Scan'],  // The list of options for the user to choose from
+                {
+                  placeHolder: "Would you like to Skip or Scan Files",
+                  prompt: "Select Skip or Scan",
+                  canPickMany: false  // Only allow a single selection
+                }
+              );
             let search1Query;
             if(searchQuery == "Skip")
             {     
