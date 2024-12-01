@@ -16,13 +16,13 @@ function extractElements(codes, fileName, extension, filePath)
     switch(extension)
     {
         case "py":
-            variableRegex = /^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.+)$/gm;
+            variableRegex = /^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.+)$|^\s*\S+\.route\s*\(([^)]+)\)\s*;?/gm;
             functionRegex = /^\s*def\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\((.*?)\)\s*:/gm;
             importRegex = /^\s*(import|from)\s+([a-zA-Z_][a-zA-Z0-9_.]*)\s*(?:import\s+([a-zA-Z_][a-zA-Z0-9_,\s]*))?\s*$/gm;
             typeRegex = /\.post\(([\s\S]*?)\)/g;
             break;
         case "js":
-            variableRegex = /^\s*(const|let|var)?\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.*?)$|^\s*app\.(get|post|put|delete)\s*\(([^)]+)\)\s*;?/gm
+            variableRegex = /^\s*(const|let|var)?\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.*?)$|^\s*\S+\.(get|post|put|delete)\s*\(([^)]+)\)\s*;?/gm;
             functionRegex = /^\s*(async\s+)?(function\s+([a-zA-Z_][a-zA-Z0-9_]*)|\(?\s*([a-zA-Z_][a-zA-Z0-9_]*)?\s*\)?\s*=>)\s*\((.*?)\)/gm;
             importRegex = /^\s*(const)?\s*(\{([^}]+)\}|\w+)\s*=\s*(require\(\s*['"]([^'"]+)['"]\s*\)|import\s+\{([^}]+)\}\s*from\s*['"]([^'"]+)['"]\s*);?\s*$/gm;
             typeRegex = /fetch\s*\(\s*([^)]+?)\s*\)/g;
@@ -108,28 +108,36 @@ function extractElements(codes, fileName, extension, filePath)
                 value = collectedValue; 
             }     
 
-            if(value == "express();")
-            {
-                express = newKey;
-                let appListenRegex = new RegExp(`${express}\\.listen\\((.*?)\\)`, 'g');
-                let match1;
-                while ((match1 = appListenRegex.exec(code)) !== null) {
-                    expressPortVar = match1[1].trim().split(',')[0];
-                    break;
-                }
+            express = newKey;
+            let appListenRegex = new RegExp(`\.listen\\((.*?)\\)`, 'g');
+            let match1;
+            while ((match1 = appListenRegex.exec(code)) !== null) {
+                expressPortVar = match1[1].trim().split(',')[0];
+                break;
             }
+            
             if(newKey == expressPortVar)
             {
                 expressURL = `http://localhost:${value.replace(';', '')}`
             }
 
-            if(express != undefined)
+            if(expressPortVar != undefined)
             {
                 if(key == "get" || key == "post" || key == "put" || key == "delete")
                 {
                     let valueURL = value.split(',').map(item => item.replace(/'/g, ''));
+                    const containsValue = Array.from(variables.values()).includes(expressURL + valueURL[0]);
+                    let containCount = 1;
+                    if(containsValue)
+                    {
+                        match[3] = containCount + "_" + expressURL + valueURL[0];
+                        containCount++;
+                    } else 
+                    {
+                        match[3] = expressURL + valueURL[0];
+                    }
+                    
                     variables.set("url_"+newKey,  expressURL + valueURL[0]);
-                    match[3] = expressURL + valueURL[0];
                 }
             }
 
@@ -152,8 +160,7 @@ function extractElements(codes, fileName, extension, filePath)
                         }
                     }
                 });
-            }
-        
+            }        
             variables.set(newKey, value.replace(';', ''));
     
             if (match[3].includes("https") || match[3].includes("http")) {
@@ -167,7 +174,7 @@ function extractElements(codes, fileName, extension, filePath)
                     apiNewKey = `${apiKey}_${count}`;
                     count++;
                 }
-    
+
                 apiLocations.set(apiNewKey, i + "|" + match[3]); 
 
                 let isPostFound = false;
@@ -206,11 +213,12 @@ function extractElements(codes, fileName, extension, filePath)
                 }
             }
         } else if (extension == "py") {
+            console.log(match)
             let key = match[1];
             let newKey = key;
             let count = 1;
-            let value = match[2].trim()
-    
+            let value = (match[2] && match[2].trim()) || (match[3] && match[3].trim());
+
             while (variables.has(newKey)) {
                 newKey = `${key}_${count}`; 
                 count++;

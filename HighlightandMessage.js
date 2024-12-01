@@ -12,6 +12,7 @@ function processFiles(fileData, apiData, fileType, context, hoverProviders) {
     
     const matches = []; // Store matches to highlight later
     const documentPromises = []; // To accumulate promises for opening documents
+    const processedKeys = new Set(); 
 
     for (const fileMap of fileData) {
         for (const [fileName, fileData] of fileMap) {
@@ -19,20 +20,27 @@ function processFiles(fileData, apiData, fileType, context, hoverProviders) {
             if (fileData.apiLocations.size !== 0) {
                 for (const [key, value] of apiData) {
                     for (const [key1, value1] of fileData.apiLocations) {
+                        if (processedKeys.has(key1)) {
+                            continue; // Skip already processed keys
+                        }
                         let newVal = value1;
                         if(value1.includes('|'))
                         {
                             newVal = value1.split('|')[1].trim();
                         }
 
-                        const newURL = key.match(/https?:\/\//i);
-                        let url;
-                        if(newURL)
+                        let matchFound = false;
+                        if(newVal ==  key)
                         {
-                            url = key.substring(newURL.index)
+                            matchFound = true;
+                        } else if (newVal.includes(key))
+                        {
+                            matchFound = true;
                         }
-                        if (newVal.includes(url)) {
 
+                        
+                        if (matchFound) {
+                            processedKeys.add(key1);
                             const fileUri = vscode.Uri.file(fileURL);
 
                             // Open the document and accumulate matches

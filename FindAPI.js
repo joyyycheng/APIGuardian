@@ -6,7 +6,6 @@ function matchAPIs(extractedData, extension)
     const variableNames = [];
     let urls = [];
     let variableValues;    
-    let express = false;
     const APIurls = new Map();
     for (const fileMap of extractedData) {
         for (const [fileName, fileData] of fileMap) {
@@ -16,14 +15,10 @@ function matchAPIs(extractedData, extension)
                     while ((match = variableRegex.exec(value)) !== null) {
                         const curlyVariable = match[1]; // For {variable}
                         const selfVariable = match[2]; // For self::$variable
-                        const expressVariable = match[3]; // For /:variable
+                        const jsLocalVariable = match[3]; // For /:variable
                         const concatVariable = match[4]; // For +variable+
-                        if(expressVariable != undefined) 
-                        {
-                            express = true;
-                        }
 
-                        let newVariableName = curlyVariable || selfVariable || expressVariable || concatVariable; // Get the variable name
+                        let newVariableName = curlyVariable || selfVariable || jsLocalVariable || concatVariable; // Get the variable name
                         let suffixIndex = 1;
 
                         // If it's a self variable, prepend the dollar sign
@@ -31,8 +26,8 @@ function matchAPIs(extractedData, extension)
                             newVariableName = `$${selfVariable}`;
                         } else if (curlyVariable) {
                             newVariableName = `${curlyVariable}`;
-                        } else if (expressVariable) {
-                            newVariableName = `${expressVariable}`
+                        } else if (jsLocalVariable) {
+                            newVariableName = `${jsLocalVariable}`
                         } else if (concatVariable) {
                             newVariableName = `${concatVariable.trim()}`
                         }
@@ -54,12 +49,12 @@ function matchAPIs(extractedData, extension)
                                 let modifiedVariable = variable.replace(/_\d+$/, ''); 
                                 value = fileData.variables.get(modifiedVariable);
                             }
-                            if (typeof value === 'string' && express == false) {
-                                value = value.replace(/^['"]|['"]$/g, ''); // Remove leading and trailing quotes
-                            } else if(typeof value === 'string' && express == true)
-                            {
-                                value = value.split(",")[1].replace(")", "").trim();
+                            if (typeof value === 'string') {
+                                value = value 
+                                    ? value.split(",")[1].replace(")", "").trim() 
+                                    : value.replace(/^['"]|['"]$/g, ''); // Remove leading and trailing quotes
                             }
+                            
                             
                             return [variable, value];
                         })
@@ -69,18 +64,11 @@ function matchAPIs(extractedData, extension)
 
             let newURLS = processUrls(urls, extension);
             let count  = 1;
-            
             for(let i = 0; i < newURLS.length; i++){
                 for (const [key, value] of variableValues) {
                     if(extension == "js")
                     {
-                        if (express == false)
-                        {
-                            newURLS[i] = newURLS[i].replace(`\${${key}}`, value); // Create a new string with the replaced value
-                        } else if (express == true)
-                        {
-                            newURLS[i] = newURLS[i].replace(`\:${key}`, value); // Create a new string with the replaced value
-                        }
+                        newURLS[i] = newURLS[i].replace(`\${${key}}`, value).replace(new RegExp(`\\:${key}(?!_)`, 'g'), value);
                     } 
                     else if(extension == "py")
                     {
@@ -120,8 +108,8 @@ function processUrls(urls, extension) {
   
     urls.forEach(url => {
       // Determine regex based on extension
-      const variableRegex = extension === 'js' ? /\$\{(.*?)\}/g : /\{(.*?)\}/g;
-      const variables = [...url.matchAll(variableRegex)].map(match => match[1]);
+      const variableRegex = /\{(.*?)\}|\.?\s*self::\$(\w+)\s*\.|\/:(\w+)|\+([^+]+)\+/g;
+      const variables = [...url.matchAll(variableRegex)].map(match => match[1]|| match[2] || match[3] || match[4]);
       
       let processedUrl = url; // Start with the original URL
   
@@ -134,8 +122,29 @@ function processUrls(urls, extension) {
             
             
             // Replace the current occurrence with the suffixed name
-            const replaceRegex = new RegExp(extension === 'js' ? `\\$\\{${varName}\\}` : `\\{${varName}\\}`, 'g');
-            processedUrl = processedUrl.replace(replaceRegex, extension === 'js' ? `\${${newVar}}` : `{${newVar}}`);
+            const replaceRegex = new RegExp(`\\{${varName}\\}|\\$\\{${varName}\\}|self::\\$${varName}|\\/:${varName}|\\+${varName}\\+`, 'g');
+            processedUrl = processedUrl.replace(replaceRegex, (match) => {
+                if (match.startsWith('${') && match.endsWith('}')) {
+                  // If it's ${varName}, use the js format
+                  return extension === 'js' ? `\${${newVar}}` : `{${newVar}}`;
+                } else if (match.startsWith('{') && match.endsWith('}')) {
+                  // If it's {varName}, use the generic format
+                  return `{${newVar}}`;
+                } else if (match.startsWith('self::$')) {
+                  // If it's self::$varName
+                  return `self::$${newVar}`;
+                } else if (match.startsWith('/:')) {
+                  // If it's /:varName
+                  return `/:${newVar}`;
+                } else if (match.startsWith('+') && match.endsWith('+')) {
+                  // If it's +varName+
+                  return `+${newVar}+`;
+                } else if (match.startsWith(':') && !match.startsWith('/:')) {
+                  // If it's :id (JavaScript format handling)
+                  return `:${newVar}`;
+                }
+                return match; // Default case (shouldn't reach here)
+              });
             
             variableCount[varName] += 1;
             } else {

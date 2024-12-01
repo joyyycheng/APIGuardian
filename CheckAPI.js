@@ -4,27 +4,33 @@ const fs = require('fs');
 const path = require('path');
 const request = require('supertest');
 const xlsx = require('xlsx');
-const unit = require('unit.js');
 
 
 async function fetchApiResults(fullURLS, extractedData, extension) {
     const results = new Map();
-    let express = false;
-    let count = 0;
+    const processedKeys = new Set();
     for (const [originalUrl, finalUrl] of fullURLS) {
         for (let i = 0; i < extractedData.length; i++) {
             for (const [fileName, fileData] of extractedData[i]) {
                 for (const [varKey, varValue] of fileData.variables) {
+                    if (processedKeys.has(varKey) || results.has(originalUrl)) {
+                        continue; // Skip if URL is already in the results map
+                    }
                     const newURL = originalUrl.match(/https?:\/\//i);
-                    let url;
+                    let url = originalUrl;
                     if(newURL)
                     {
                         url = originalUrl.substring(newURL.index)
+                    } 
+                    let matchFound = false;
+                    if(varValue ==  url)
+                    {
+                        matchFound = true;
+                    } else if (varValue.includes(url))
+                    {
+                        matchFound = true;
                     }
-                    if (varValue === url) {
-                        if (extension === "js" && fileData.variables.has("express")) {
-                            express = true;
-                        }                        
+                    if (matchFound) {                      
                         let requestType = '';
                         for (const [typeKey, typeValue] of fileData.type) {
                             if (typeKey === varKey) {
@@ -45,15 +51,9 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
                         let field = undefined;
                         if(extension === "js")
                         {
-                            if(express == false)
-                            {
-                                const fetchMatch = /fetch\(([^,]+)(?:,([^)]*))?\)/.exec(callValue);
-                                if (fetchMatch) {
-                                    optionsParam = fetchMatch[2]?.trim();
-                                }
-                            } else if(express == true)
-                            {
-
+                            const fetchMatch = /fetch\(([^,]+)(?:,([^)]*))?\)/.exec(callValue);
+                            if (fetchMatch) {
+                                optionsParam = fetchMatch[2]?.trim();
                             }
 
                         } else if(extension === "py")
@@ -128,7 +128,7 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
                                 headers: header,  // Set the content type to JSON
                                 body: field // Stringify the data to be sent in the body
                             };
-                        } else if(express == true)
+                        } else
                         {
                             transformedOptionsString = {
                                 method: requestType,  // HTTP method
@@ -155,9 +155,9 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
 
                             // Perform GET or POST based on the request type
                             if (requestType === "GET") {
-                                //response = await fetch(encodedUrl);
+                                let response1;
                                 try {
-                                    const response1 = await request(baseURL)['get'](path)
+                                    response1 = await request(baseURL)['get'](path)
                                     results_test.set(`${requestType}_${encodedUrl}`, { status:`${response1.status}`, message: `${response1.message || response1.body.message}`});
                                 } catch (error) {
                                     results_test.set(`${requestType}_${encodedUrl}`, { status:`${response1.status}`, message: `${error.message}`});
@@ -168,9 +168,9 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
                                 //response = await fetch(encodedUrl, transformedOptionsString);
                                 // this method affected database, what we can do is ask user if they would like to test with or without databaase
                                 // with we keep the current method
-                                // without we use Database-agnostic Testing
+                                let response1;
                                 try {
-                                    const response1 = await request(baseURL)[transformedOptionsString.method.toLowerCase()](path)
+                                    response1 = await request(baseURL)[transformedOptionsString.method.toLowerCase()](path)
                                     .set(transformedOptionsString.headers)
                                     .send(transformedOptionsString.body);
                                     results_test.set(`${requestType}_${encodedUrl}`, { status:`${response1.status}`, message: `${response1.message || response1.body.message}`});
@@ -192,12 +192,7 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
 
                                 if ((parseInt(data.status) >= 200 && parseInt(data.status) < 300) || data.status === "success" || data.success == "true") {
                                     markdownString.appendMarkdown(`**Status**: <span style="color:var(--vscode-charts-green);">Success/200</span>\n\n`);
-                                    let newOriginlURL = originalUrl;
-                                    while (results.has(originalUrl)) {
-                                        newOriginlURL = `${count}_${originalUrl}`; 
-                                        count++;
-                                    }
-                                    results.set(newOriginlURL, {
+                                    results.set(originalUrl, {
                                         markdown: markdownString,
                                         url : encodedUrl,
                                         location: fileData.filePath,
@@ -215,12 +210,7 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
                                     markdownString.appendMarkdown(`**Recommended Fix (from ${GoogleResults[0].displayLink})**:\n\n`);
                                     markdownString.appendMarkdown(`**Title**: ${GoogleResults[0].title}\n\n`);
                                     markdownString.appendMarkdown(`**Link**: [${GoogleResults[0].link}](${GoogleResults[0].link})\n\n`);
-                                    let newOriginlURL = originalUrl;
-                                    while (results.has(originalUrl)) {
-                                        newOriginlURL = `${count}_${originalUrl}`; 
-                                        count++;
-                                    }
-                                    results.set(newOriginlURL, {
+                                    results.set(originalUrl, {
                                         markdown: markdownString,
                                         url : encodedUrl,
                                         location: fileData.filePath,
@@ -229,6 +219,7 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
                                     }
                                     );
                                 }
+                                processedKeys.add(varKey);
                             }
                         } catch (error) {
                             console.error("Fetch error:", error.message);
