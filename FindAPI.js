@@ -17,7 +17,7 @@ function matchAPIs(extractedData, extension)
                         const selfVariable = match[2]; // For self::$variable
                         const jsLocalVariable = match[3]; // For /:variable
                         const concatVariable = match[4]; // For +variable+
-                        const pyLocalVariable = match[5]
+                        const pyLocalVariable = match[5].split(":")[1]; // For <int:string:variable>
 
                         let newVariableName = curlyVariable || selfVariable || jsLocalVariable || concatVariable || pyLocalVariable; // Get the variable name
                         let suffixIndex = 1;
@@ -25,9 +25,7 @@ function matchAPIs(extractedData, extension)
                         // If it's a self variable, prepend the dollar sign
                         if (selfVariable) {
                             newVariableName = `$${selfVariable}`;
-                        } else {
-                            newVariableName = `${curlyVariable}`;
-                        }
+                        } 
 
                         // Ensure the variable name is unique
                         while (variableNames.includes(newVariableName)) {
@@ -48,8 +46,10 @@ function matchAPIs(extractedData, extension)
                             }
                             if (typeof value === 'string') {
                                 value = value 
+                                ? value.includes(",") 
                                     ? value.split(",")[1].replace(")", "").trim() 
-                                    : value.replace(/^['"]|['"]$/g, ''); // Remove leading and trailing quotes
+                                    : value.replace(/^['"]|['"]$/g, '')// Remove leading and trailing quotes
+                                : value;
                             }
                             
                             
@@ -69,7 +69,7 @@ function matchAPIs(extractedData, extension)
                     } 
                     else if(extension == "py")
                     {
-                        newURLS[i] = newURLS[i].replace(`\{${key}}`, value).replace(new RegExp(`['"\s]*\\+\\s*${key}\\s*\\+['"\s]*`, 'g'), value).replace(new RegExp(`<(?:int|string|bool):${key}>`, 'g'), value);   // Create a new string with the replaced value
+                        newURLS[i] = newURLS[i].replace(`\{${key}}`, value).replace(new RegExp(`['"\s]*\\+\\s*${key}\\s*\\+['"\s]*`, 'g'), value).replace(new RegExp(`${key}(?!_)`, 'g'), value);   // Create a new string with the replaced value
                     } else if (extension == "cs")
                     {
                         newURLS[i] = newURLS[i].replace(`\{${key}}`, value);
@@ -105,8 +105,8 @@ function processUrls(urls, extension) {
   
     urls.forEach(url => {
       // Determine regex based on extension
-      const variableRegex = /\{(.*?)\}|\.?\s*self::\$(\w+)\s*\.|\/:(\w+)|\+([^+]+)\+/g;
-      const variables = [...url.matchAll(variableRegex)].map(match => match[1]|| match[2] || match[3] || match[4]);
+      const variableRegex = /\{(.*?)\}|\.?\s*self::\$(\w+)\s*\.|\/:(\w+)|\+([^+]+)\+|<(?:int|string):([^>]+)>/g
+      const variables = [...url.matchAll(variableRegex)].map(match => match[1]|| match[2] || match[3] || match[4] || match[5]); // Extract variable names
       
       let processedUrl = url; // Start with the original URL
   
@@ -119,7 +119,7 @@ function processUrls(urls, extension) {
             
             
             // Replace the current occurrence with the suffixed name
-            const replaceRegex = new RegExp(`\\{${varName}\\}|\\$\\{${varName}\\}|self::\\$${varName}|\\/:${varName}|\\+${varName}\\+`, 'g');
+            const replaceRegex = new RegExp(`\\{${varName}\\}|\\$\\{${varName}\\}|self::\\$${varName}|\\/:${varName}|\\+${varName}\\+|<(?:int|string):${varName}>`, 'g');
             processedUrl = processedUrl.replace(replaceRegex, (match) => {
                 if (match.startsWith('${') && match.endsWith('}')) {
                   // If it's ${varName}, use the js format
@@ -139,14 +139,23 @@ function processUrls(urls, extension) {
                 } else if (match.startsWith(':') && !match.startsWith('/:')) {
                   // If it's :id (JavaScript format handling)
                   return `:${newVar}`;
+                } else if (match.startsWith('<')) {
+                    // If it's <int:varName> or <string:varName>
+                    return `${newVar}`;
                 }
                 return match; // Default case (shouldn't reach here)
               });
             
             variableCount[varName] += 1;
             } else {
-            // First occurrence of the variable: count it without suffix
-            variableCount[varName] = 1;
+                const replaceRegex1 = new RegExp(`<(?:int|string):${varName}>`, 'g');
+                processedUrl = processedUrl.replace(replaceRegex1, (match) => {
+                    if (match.startsWith('<')) {
+                        // If it's <int:varName> or <string:varName>
+                        return `${varName}`;
+                    }
+                });
+                variableCount[varName] = 1;
             }
         });
   
