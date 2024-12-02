@@ -1,6 +1,6 @@
 function matchAPIs(extractedData, extension)
 {
-    const variableRegex = /\{(.*?)\}|\.?\s*self::\$(\w+)\s*\.|\/:(\w+)|\+([^+]+)\+/g;
+    const variableRegex = /\{(.*?)\}|\.?\s*self::\$(\w+)\s*\.|\/:(\w+)|\+([^+]+)\+|<([^>]+)>/g;
     
     let match;
     const variableNames = [];
@@ -17,19 +17,16 @@ function matchAPIs(extractedData, extension)
                         const selfVariable = match[2]; // For self::$variable
                         const jsLocalVariable = match[3]; // For /:variable
                         const concatVariable = match[4]; // For +variable+
+                        const pyLocalVariable = match[5]
 
-                        let newVariableName = curlyVariable || selfVariable || jsLocalVariable || concatVariable; // Get the variable name
+                        let newVariableName = curlyVariable || selfVariable || jsLocalVariable || concatVariable || pyLocalVariable; // Get the variable name
                         let suffixIndex = 1;
 
                         // If it's a self variable, prepend the dollar sign
                         if (selfVariable) {
                             newVariableName = `$${selfVariable}`;
-                        } else if (curlyVariable) {
+                        } else {
                             newVariableName = `${curlyVariable}`;
-                        } else if (jsLocalVariable) {
-                            newVariableName = `${jsLocalVariable}`
-                        } else if (concatVariable) {
-                            newVariableName = `${concatVariable.trim()}`
                         }
 
                         // Ensure the variable name is unique
@@ -72,7 +69,7 @@ function matchAPIs(extractedData, extension)
                     } 
                     else if(extension == "py")
                     {
-                        newURLS[i] = newURLS[i].replace(`\{${key}}`, value).replace(new RegExp(`['"\s]*\\+\\s*${key}\\s*\\+['"\s]*`, 'g'), value);   // Create a new string with the replaced value
+                        newURLS[i] = newURLS[i].replace(`\{${key}}`, value).replace(new RegExp(`['"\s]*\\+\\s*${key}\\s*\\+['"\s]*`, 'g'), value).replace(new RegExp(`<(?:int|string|bool):${key}>`, 'g'), value);   // Create a new string with the replaced value
                     } else if (extension == "cs")
                     {
                         newURLS[i] = newURLS[i].replace(`\{${key}}`, value);
