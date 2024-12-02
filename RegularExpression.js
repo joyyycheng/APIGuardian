@@ -18,9 +18,10 @@ function extractElements(codes, fileName, extension, filePath)
         case "py":
             variableRegex = /^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.+)$|^\s*\S+\.route\s*\(([^)]+)\)\s*;?/gm;
             functionRegex = /^\s*def\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\((.*?)\)\s*:/gm;
-            importRegex = /^\s*(import|from)\s+([a-zA-Z_][a-zA-Z0-9_.]*)\s*(?:import\s+([a-zA-Z_][a-zA-Z0-9_,\s]*))?\s*$/gm;
-            typeRegex = /\.post\(([\s\S]*?)\)/g;
-            break;
+            // the from .. import got an error
+            importRegex = /^\s*(import\s+([a-zA-Z_][a-zA-Z0-9_.]*))\s*\r?\n|^\s*from\s+([a-zA-Z_][a-zA-Z0-9_.]*)\s+import\s+([a-zA-Z_][a-zA-Z0-9_,\s]*)\s*$/gm;
+            typeRegex = /\.(get|post|put|delete)\(([\s\S]*?)\)/g;
+            break; 
         case "js":
             variableRegex = /^\s*(const|let|var)?\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.*?)$|^\s*\S+\.(get|post|put|delete)\s*\(([^)]+)\)\s*;?/gm;
             functionRegex = /^\s*(async\s+)?(function\s+([a-zA-Z_][a-zA-Z0-9_]*)|\(?\s*([a-zA-Z_][a-zA-Z0-9_]*)?\s*\)?\s*=>)\s*\((.*?)\)/gm;
@@ -213,26 +214,40 @@ function extractElements(codes, fileName, extension, filePath)
                 }
             }
         } else if (extension == "py") {
-            console.log(match)
             let key = match[1];
             let newKey = key;
             let count = 1;
+            let local = false;
+            let port;
+            let args;
             let value = (match[2] && match[2].trim()) || (match[3] && match[3].trim());
-
+            if(newKey == undefined)
+            {
+                args = value.split(',');
+                newKey = args[1].trim().split("=")[1].replace(/[\[\]'"]+/g, '')
+                let portRegex = new RegExp(`port=(\\d+)`, 'g');
+                let match1;
+                while ((match1 = portRegex.exec(code)) !== null) {
+                    port = match1[1];
+                    break;
+                }
+                local = true;
+            }
+            match[2] = value;
             while (variables.has(newKey)) {
                 newKey = `${key}_${count}`; 
                 count++;
             }
 
-            if (value.includes("{") || value.includes("[") || value.includes('"')) {
+            if ( typeof value === "string" && (value.includes("{") || value.includes("[") || value.includes('"') || value.includes("("))) {
                 let block = value;  // The value is stored as a starting point.
                 let braceCount = 0;
                 let quoteCount = 0;
                 
                 // Loop through the characters in the value and count braces and quotes
                 for (let char of value) {
-                    if (char === "{" || char === "[") braceCount++;
-                    if (char === "}" || char === "]") braceCount--;
+                    if (char === "{" || char === "[" || char == "(") braceCount++;
+                    if (char === "}" || char === "]" || char == ")") braceCount--;
                     if (char === '"') quoteCount++;
                 }
                 
@@ -243,12 +258,17 @@ function extractElements(codes, fileName, extension, filePath)
                     let char = code[index++];
                     block += char;  // Add the character to the block of text.
                     
-                    if (char === "{" || char === "[") braceCount++;  // Increment brace count.
-                    if (char === "}" || char === "]") braceCount--;  // Decrement brace count.
+                    if (char === "{" || char === "[" || char == "(") braceCount++;  // Increment brace count.
+                    if (char === "}" || char === "]" || char == ")") braceCount--;  // Decrement brace count.
                     if (char === '"') quoteCount++;  // Toggle quote count (even quotes mean it's balanced).
                 }
             
                 value = block;  // Now `value` contains the full content with properly balanced braces and quotes.
+            }
+
+            if(local)
+            {
+                  variables.set("url_"+newKey, `http://localhost:${port}${args[0].replace(/'/g, '')}`)
             }
             
 
@@ -286,31 +306,51 @@ function extractElements(codes, fileName, extension, filePath)
                     apiNewKey = `${apiKey}_${count}`; 
                     count++;
                 }
-                let isPostFound = false;
 
-                while ((match = typeRegex.exec(codes)) !== null) {
-                    const fetchArgs = match[1].trim();
-                    
-                    if (fetchArgs.startsWith('.post')) {
-                        types.set(newKey, 'POST');
-                        calls.set(newKey, match[1]);
-                        isPostFound = true;
-                    } else if(fetchArgs.startsWith('.put')) {
-                        types.set(newKey, 'PUT');
-                        calls.set(newKey, match[1]);
-                        isPostFound = true;
-                    } else if(fetchArgs.startsWith('.delete')) {
-                        types.set(newKey, 'DELETE');
-                        calls.set(newKey, match[1]);
-                        isPostFound = true;
-                    } else {
+                if(!local)
+                {
+                    let isPostFound = false;
+
+                    while ((match = typeRegex.exec(codes)) !== null) {
+                        const fetchArgs = match[1].trim();
+                        
+                        if (fetchArgs.startsWith('.post')) {
+                            types.set(newKey, 'POST');
+                            calls.set(newKey, match[1]);
+                            isPostFound = true;
+                        } else if(fetchArgs.startsWith('.put')) {
+                            types.set(newKey, 'PUT');
+                            calls.set(newKey, match[1]);
+                            isPostFound = true;
+                        } else if(fetchArgs.startsWith('.delete')) {
+                            types.set(newKey, 'DELETE');
+                            calls.set(newKey, match[1]);
+                            isPostFound = true;
+                        } else {
+                            types.set(newKey, 'GET');
+                        }
+                    }
+    
+                    if (!isPostFound) {
                         types.set(newKey, 'GET');
+                    }
+                } else
+                {
+                    if(newKey.startsWith("GET"))
+                    {
+                        types.set(newKey, 'GET');
+                    }else if(newKey.startsWith("POST"))
+                    {
+                        types.set(newKey, 'POST');
+                    }else if(newKey.startsWith("PUT"))
+                    {
+                        types.set(newKey, 'PUT');
+                    }else if(newKey.startsWith("DELETE"))
+                    {
+                        types.set(newKey, 'DELETE');
                     }
                 }
 
-                if (!isPostFound) {
-                    types.set(newKey, 'GET');
-                }
                 apiLocations.set(apiNewKey, j); 
             }
         } else if (extension == "cs")
@@ -492,13 +532,17 @@ function extractElements(codes, fileName, extension, filePath)
             imports.set(modulePath, importedNames);
         } else if(extension == "py")
         {
-            const importType = match[1]; // 'import' or 'from'
-            const modulePath = match[2]; // the module being imported
-        
+            let importType ="import"
+            if(match[1] == undefined)
+            {
+                importType = "from"
+            }
+            
+            let modulePath = match[1] || match[3]
             // If it's a 'from' import, we need to handle the imported functions or classes
             let importedNames = [];
             if (importType === 'from') {
-                const specificImports = match[3]; // e.g., 'get_weathers, process_data'
+                const specificImports = match[2] || match[4]; // e.g., 'get_weathers, process_data'
                 if (specificImports) {
                     if (specificImports.includes(',')) { 
                         importedNames = specificImports
@@ -511,7 +555,7 @@ function extractElements(codes, fileName, extension, filePath)
                 }
             } else {
                 // For a standard import, we can just set the module name as the imported name
-                importedNames = [modulePath.trim()];
+                importedNames = [modulePath];
             }
         
             // You may want to adjust how you set the imports based on your existing logic

@@ -122,6 +122,7 @@ function activate(context) {
             }
 
             try {
+                console.log(jsFile)
                 matchFileInfo(jsFile);
                 let jsResults = matchAPIs(jsFile, "js");
                 apiResults1 = await fetchApiResults(jsResults, jsFile, "js");
@@ -130,8 +131,8 @@ function activate(context) {
                 console.error("Error processing JS files:", error);
             }
             try {
+                console.log(pyFile);
                 matchFileInfo(pyFile);
-                console.log(pyFile)
                 let pyResults = matchAPIs(pyFile, "py");
                 apiResults2 = await fetchApiResults(pyResults, pyFile, "py");
                 processFiles(pyFile, apiResults2, "py", context, hoverProviders);
