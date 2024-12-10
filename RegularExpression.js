@@ -284,10 +284,13 @@ function extractElements(codes, fileName, extension, filePath)
                   variables.set("url_"+newKey, `http://localhost:${port}${args[0].replace(/'/g, '')}`)
             }
             
-
+            let found = false;
             if(value.includes("os.getenv"))
             {
-                fs.readFile(path.join(path.dirname(filePath), ".env"), 'utf8', (err, data) => {
+                const projectRoot = path.dirname(path.dirname(filePath)); // Change to your project's root directory if needed
+                const envFilePath = findEnvFile(projectRoot);
+
+                fs.readFile(envFilePath, 'utf8', (err, data) => {
                     if (err) {
                         console.error("Error reading file:", err);
                         return;
@@ -298,15 +301,20 @@ function extractElements(codes, fileName, extension, filePath)
                         const match2 = value.match(regex);
                         if(match2[1] == match1[1])
                         {
+                            let keyValue = value
                             value = match1[2];
                             variables.set(newKey, value); 
-                            return;
+                            found = true;
+                            break;
                         }
                     }
                 });
-            }
+            } 
 
-            variables.set(newKey, value); 
+            if(!found)
+            {
+                variables.set(newKey, value); 
+            }
     
             if (match[2].includes("https") || match[2].includes("http")) {
                 const j = match[0].replace(/^\n/, '').replace(/\r\n/g, '');
@@ -734,5 +742,30 @@ function extractElements(codes, fileName, extension, filePath)
 
     return extractedData;
 }
+
+function findEnvFile(startDir) {
+    let envPath = null;
+
+    function searchDir(dir) {
+        const files = fs.readdirSync(dir);
+        for (const file of files) {
+            const fullPath = path.join(dir, file);
+            const stats = fs.statSync(fullPath);
+
+            if (stats.isDirectory()) {
+                // Recur into subdirectories
+                searchDir(fullPath);
+            } else if (file === '.env') {
+                // Found the .env file
+                envPath = fullPath;
+                return;
+            }
+        }
+    }
+
+    searchDir(startDir);
+    return envPath;
+}
+
 
 module.exports = {extractElements };
