@@ -68,7 +68,7 @@ function activate(context) {
                     cancellable: false,
                 },
             async (progress) => {
-            const globPattern = '**/*.{js,py,cs,php,ts}';
+            const globPattern = '**/*.{js,py,cs,php,tsx}';
             let files = [];
             if (searchQuery == "Scan" && searchArray[0] != '')
             {
@@ -116,7 +116,7 @@ function activate(context) {
                         const php = extractElements(fileContent, path.basename(document.fileName, path.extname(document.fileName)), fileExtension, file.fsPath);
                         phpFile.push(php)
                         break;
-                    case "ts":
+                    case "tsx":
                         const php = extractElements(fileContent, path.basename(document.fileName, path.extname(document.fileName)), fileExtension, file.fsPath);
                         phpFile.push(php)
                         break;
@@ -163,9 +163,9 @@ function activate(context) {
 
             try {
                 matchFileInfo(tsFile);
-                let tsResults = matchAPIs(tsFile, "ts");
-                apiResults4 = await fetchApiResults(tsResults, tsFile, "ts");
-                processFiles(phpFile, apiResults4, "ts", context, hoverProviders);
+                let tsResults = matchAPIs(tsFile, "tsx");
+                apiResults4 = await fetchApiResults(tsResults, tsFile, "tsx");
+                processFiles(phpFile, apiResults4, "tsx", context, hoverProviders);
             } catch (error) {
                 console.error("Error processing TS files:", error);
             }
