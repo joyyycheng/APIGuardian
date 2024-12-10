@@ -183,7 +183,19 @@ function extractElements(codes, fileName, extension, filePath)
 
                 apiLocations.set(apiNewKey, i + "|" + match[3]); 
 
-                let isPostFound = false;
+                const fetchPattern = /fetch\(['"`](https?:\/\/[^\)'"]+)[`'"]\s*,\s*\{([^}]+)\}/;
+                const fetchmatch = value.match(fetchPattern)
+                if(fetchmatch != undefined)
+                {
+                    const methodPattern = /method:\s*'([^']+)'/;
+                    const methodmatch = fetchmatch[2].match(methodPattern);
+                    const headersPattern = /headers:\s*\{([^}]+)\}/;
+                    const headermatch = value.match(headersPattern);
+                    variables.set("url_" + methodmatch[1], fetchmatch[1]);
+                    types.set("url_"+methodmatch[1], methodmatch[1]);
+                    variables.set("header", headermatch)
+                }
+
 
                 while ((match = typeRegex.exec(codes)) !== null) {
                     const fetchArgs = match[1].trim();
@@ -195,7 +207,6 @@ function extractElements(codes, fileName, extension, filePath)
                     if (args.length > 1) {
                         types.set(newKey, 'POST');
                         calls.set(newKey, match[0]);
-                        isPostFound = true;
                     } else {
                         types.set(newKey, 'GET');
                     }
@@ -214,9 +225,6 @@ function extractElements(codes, fileName, extension, filePath)
                     }
                 }
 
-                if (!isPostFound) {
-                    types.set(newKey, 'GET');
-                }
             }
         } else if (extension == "py") {
             let key = match[1];

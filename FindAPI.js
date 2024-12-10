@@ -10,6 +10,10 @@ function matchAPIs(extractedData, extension)
     for (const fileMap of extractedData) {
         for (const [fileName, fileData] of fileMap) {
             for (const [key, value] of fileData.variables.entries()) {
+                if(value.length > 500)
+                {
+                    continue;
+                }
                 if (value.includes("https") || value.includes("http")) {
                     urls.push(value);
                     while ((match = variableRegex.exec(value)) !== null) {
@@ -26,8 +30,6 @@ function matchAPIs(extractedData, extension)
                         if (selfVariable) {
                             newVariableName = `$${selfVariable}`;
                         } 
-                        
-                        console.log(variableNames);
                         // Ensure the variable name is unique
                         while (variableNames.includes(newVariableName)) {
                             newVariableName = `${newVariableName}_${suffixIndex}`; // Append suffix
@@ -124,7 +126,7 @@ function processUrls(urls, extension) {
             processedUrl = processedUrl.replace(replaceRegex, (match) => {
                 if (match.startsWith('${') && match.endsWith('}')) {
                   // If it's ${varName}, use the js format
-                  return (extension === 'js' || extension == "tsx") ? `\${${newVar}}` : `{${newVar}}`;
+                  return (extension === 'js' || extension === 'tsx') ? `\${${newVar}}` : `{${newVar}}`;
                 } else if (match.startsWith('{') && match.endsWith('}')) {
                   // If it's {varName}, use the generic format
                   return `{${newVar}}`;
