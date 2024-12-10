@@ -72,7 +72,10 @@ function matchAPIs(extractedData, extension)
                     } 
                     else if(extension == "py")
                     {
-                        newURLS[i] = newURLS[i].replace(`\{${key}}`, value).replace(new RegExp(`['"\s]*\\+\\s*${key}\\s*\\+['"\s]*`, 'g'), value).replace(new RegExp(`${key}(?!_)`, 'g'), value);   // Create a new string with the replaced value
+                        newURLS[i] = newURLS[i]
+                        .replace(new RegExp(`\\{${key}\\}`, 'g'), value)
+                        
+                    // Create a new string with the replaced value
                     } else if (extension == "cs")
                     {
                         newURLS[i] = newURLS[i].replace(`\{${key}}`, value);

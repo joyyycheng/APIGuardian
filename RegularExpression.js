@@ -149,25 +149,33 @@ function extractElements(codes, fileName, extension, filePath)
 
             if(value.includes("process.env."))
             {
-                fs.readFile(path.join(path.dirname(filePath), ".env"), 'utf8', (err, data) => {
-                    if (err) {
-                        console.error("Error reading file:", err);
-                        return;
+                let projectRoot;
+                let envFilePath;
+                projectRoot = path.dirname(filePath); // Change to your project's root directory if needed
+                envFilePath = findEnvFile(projectRoot);
+                if(envFilePath == undefined)
+                {
+                    projectRoot = path.dirname(path.dirname(filePath)); // Change to your project's root directory if needed
+                    envFilePath = findEnvFile(projectRoot);
+                }
+                const data = fs.readFileSync(envFilePath, 'utf8');
+                console.log("data: ", data);
+                let match1;
+                let envRegrex = /^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*['"]([^'"]+)['"]\s*$/gm
+                while ((match1 = envRegrex.exec(data)) !== null) {
+                    const regex = /process\.env\.([^"]+)/;
+                    const match2 = value.match(regex);
+                    if(match2[1] == match1[1])
+                    {
+                        value = match1[2];
+                        variables.set(newKey, value);
+                        break;
                     }
-                    let match1;
-                    while ((match1 = variableRegex.exec(data)) !== null) {
-                        const regex = /process\.env\.([^"]+)/;
-                        const match2 = value.match(regex);
-                        if(match2[1] == match1[1])
-                        {
-                            value = match1[2];
-                            variables.set(newKey, value); 
-                            return;
-                        }
-                    }
-                });
+                }
+            } else 
+            {
+                variables.set(newKey, value.replace(';', ''));
             }        
-            variables.set(newKey, value.replace(';', ''));
     
             if (match[3].includes("https") || match[3].includes("http")) {
                 const i = match[0].replace(/^\n/, '').replace(/\r\n/g, '');
@@ -211,7 +219,7 @@ function extractElements(codes, fileName, extension, filePath)
                         types.set(newKey, 'GET');
                     }
                 }
-
+                // fix this, the types got issue
                 if(express != undefined)
                 {
                     if (newKey == "get") {
@@ -284,36 +292,35 @@ function extractElements(codes, fileName, extension, filePath)
                   variables.set("url_"+newKey, `http://localhost:${port}${args[0].replace(/'/g, '')}`)
             }
             
-            let found = false;
             if(value.includes("os.getenv"))
             {
-                const projectRoot = path.dirname(path.dirname(filePath)); // Change to your project's root directory if needed
-                const envFilePath = findEnvFile(projectRoot);
+                let projectRoot;
+                let envFilePath;
+                projectRoot = path.dirname(filePath); // Change to your project's root directory if needed
+                envFilePath = findEnvFile(projectRoot);
+                if(envFilePath == undefined)
+                {
+                    projectRoot = path.dirname(path.dirname(filePath)); // Change to your project's root directory if needed
+                    envFilePath = findEnvFile(projectRoot);
+                }
 
-                fs.readFile(envFilePath, 'utf8', (err, data) => {
-                    if (err) {
-                        console.error("Error reading file:", err);
-                        return;
+                const data = fs.readFileSync(envFilePath, 'utf8');
+                console.log("data: ", data);
+                let match1;
+                let envRegrex = /^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*['"]([^'"]+)['"]\s*$/gm
+                while ((match1 = envRegrex.exec(data)) !== null) {
+                    const regex = /os\.getenv\(['"]([^'"]+)['"]\)/;
+                    const match2 = value.match(regex);
+                    if(match2[1] == match1[1])
+                    {
+                        value = match1[2];
+                        variables.set(newKey, value);
+                        break;
                     }
-                    let match1;
-                    while ((match1 = variableRegex.exec(data)) !== null) {
-                        const regex = /os\.getenv\("([^"]+)"\)/;
-                        const match2 = value.match(regex);
-                        if(match2[1] == match1[1])
-                        {
-                            let keyValue = value
-                            value = match1[2];
-                            variables.set(newKey, value); 
-                            found = true;
-                            break;
-                        }
-                    }
-                });
-            } 
-
-            if(!found)
+                }
+            } else
             {
-                variables.set(newKey, value); 
+                variables.set(newKey, value);
             }
     
             if (match[2].includes("https") || match[2].includes("http")) {
