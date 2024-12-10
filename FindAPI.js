@@ -63,7 +63,7 @@ function matchAPIs(extractedData, extension)
             let count  = 1;
             for(let i = 0; i < newURLS.length; i++){
                 for (const [key, value] of variableValues) {
-                    if(extension == "js")
+                    if(extension == "js" || extension == "ts")
                     {
                         newURLS[i] = newURLS[i].replace(`\${${key}}`, value).replace(new RegExp(`\\:${key}(?!_)`, 'g'), value);
                     } 
@@ -123,7 +123,7 @@ function processUrls(urls, extension) {
             processedUrl = processedUrl.replace(replaceRegex, (match) => {
                 if (match.startsWith('${') && match.endsWith('}')) {
                   // If it's ${varName}, use the js format
-                  return extension === 'js' ? `\${${newVar}}` : `{${newVar}}`;
+                  return (extension === 'js' || extension == "ts") ? `\${${newVar}}` : `{${newVar}}`;
                 } else if (match.startsWith('{') && match.endsWith('}')) {
                   // If it's {varName}, use the generic format
                   return `{${newVar}}`;

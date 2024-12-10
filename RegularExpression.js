@@ -42,7 +42,12 @@ function extractElements(codes, fileName, extension, filePath)
             headerRegex = /CURLOPT_HTTPHEADER\s*,\s*(\$\w+)/g;
             fieldRegex = /CURLOPT_POSTFIELDS\s*,\s*(\$\w+)/g;
             break;
-            
+        case "ts":
+            variableRegex = /^\s*(const|let|var)?\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.*?)$|^\s*\S+\.(get|post|put|delete)\s*\(([^)]+)\)\s*;?/gm;
+            functionRegex = /^\s*(async\s+)?(function\s+([a-zA-Z_][a-zA-Z0-9_]*)|\(?\s*([a-zA-Z_][a-zA-Z0-9_]*)?\s*\)?\s*=>)\s*\((.*?)\)/gm;
+            importRegex = /^\s*(const)?\s*(\{([^}]+)\}|\w+)\s*=\s*(require\(\s*['"]([^'"]+)['"]\s*\)|import\s+\{([^}]+)\}\s*from\s*['"]([^'"]+)['"]\s*);?\s*$/gm;
+            typeRegex = /fetch\s*\(\s*([^)]+?)\s*\)/g;
+            break;    
         default:
             console.log("Unsupported file type: " + extension);
             return;
@@ -72,7 +77,7 @@ function extractElements(codes, fileName, extension, filePath)
     });
 
     while ((match = variableRegex.exec(code)) !== null) {
-        if (extension == "js") {
+        if (extension == "js" || extension == "ts") {
             let key = (match[2] && match[2].trim()) ? match[2].trim() : (match[4] && match[4].trim());
             let newKey = key; 
             let count = 1;
@@ -464,7 +469,7 @@ function extractElements(codes, fileName, extension, filePath)
     
 
     while ((match = functionRegex.exec(code)) !== null) {
-        if(extension == "js")
+        if(extension == "js" || extension == "ts")
         {
             if(match[1] == 'async ')
                 {
@@ -514,7 +519,7 @@ function extractElements(codes, fileName, extension, filePath)
 
     // Find import statements
     while ((match = importRegex.exec(code)) !== null) {
-        if(extension == "js")
+        if(extension == "js" || extension == "ts")
         {   let importedNames = [];
             //const importedNames = match[1].replace(/[{}]/g, '').split(',').map(name => name.trim()); // Extract names inside curly braces
             const modulePath = match[5].replace('./', '').replace('.js', '');
@@ -628,7 +633,7 @@ function extractElements(codes, fileName, extension, filePath)
         {
             return;
         } 
-        if(extension == "js")
+        if(extension == "js" || extension == "ts")
         {
             if (Array.isArray(params)) { // Check if functionName is an array
                 for (let i = 0; i < params.length; i++) {

@@ -68,7 +68,7 @@ function activate(context) {
                     cancellable: false,
                 },
             async (progress) => {
-            const globPattern = '**/*.{js,py,cs,php}';
+            const globPattern = '**/*.{js,py,cs,php,ts}';
             let files = [];
             if (searchQuery == "Scan" && searchArray[0] != '')
             {
@@ -84,7 +84,8 @@ function activate(context) {
             const pyFile =[]
             const csFile = []
             const phpFile = []
-            let apiResults, apiResults1, apiResults2, apiResults3;
+            const tsFile = []
+            let apiResults, apiResults1, apiResults2, apiResults3, apiResults4;
             for (const file of files) {
                 const document = await vscode.workspace.openTextDocument(file);
                 const fileExtension = document.fileName.split('.').pop();
@@ -115,6 +116,10 @@ function activate(context) {
                         const php = extractElements(fileContent, path.basename(document.fileName, path.extname(document.fileName)), fileExtension, file.fsPath);
                         phpFile.push(php)
                         break;
+                    case "ts":
+                        const php = extractElements(fileContent, path.basename(document.fileName, path.extname(document.fileName)), fileExtension, file.fsPath);
+                        phpFile.push(php)
+                        break;
                     default:
                         vscode.window.showInformationMessage('No specific action for this file extension.');
                         break;
@@ -122,7 +127,6 @@ function activate(context) {
             }
 
             try {
-                console.log(jsFile)
                 matchFileInfo(jsFile);
                 let jsResults = matchAPIs(jsFile, "js");
                 apiResults1 = await fetchApiResults(jsResults, jsFile, "js");
@@ -131,7 +135,6 @@ function activate(context) {
                 console.error("Error processing JS files:", error);
             }
             try {
-                console.log(pyFile);
                 matchFileInfo(pyFile);
                 let pyResults = matchAPIs(pyFile, "py");
                 apiResults2 = await fetchApiResults(pyResults, pyFile, "py");
@@ -158,6 +161,15 @@ function activate(context) {
                 console.error("Error processing PHP files:", error);
             }
 
+            try {
+                matchFileInfo(tsFile);
+                let tsResults = matchAPIs(tsFile, "ts");
+                apiResults4 = await fetchApiResults(tsResults, tsFile, "ts");
+                processFiles(phpFile, apiResults4, "ts", context, hoverProviders);
+            } catch (error) {
+                console.error("Error processing TS files:", error);
+            }
+
             const safeMerge = (...maps) => {
                 const mergedMap = new Map();
                 maps.filter(map => map !== undefined && map !== null).forEach(map => {
@@ -169,7 +181,7 @@ function activate(context) {
             };
             
             // Example usage
-            const merged = safeMerge(apiResults, apiResults1, apiResults2, apiResults3);
+            const merged = safeMerge(apiResults, apiResults1, apiResults2, apiResults3, apiResults4);
             
             let statuses = [];
             merged.forEach((value, key) => {

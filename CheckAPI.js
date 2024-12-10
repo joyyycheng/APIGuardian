@@ -49,7 +49,7 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
                         let optionsParam = undefined;
                         let header = undefined;
                         let field = undefined;
-                        if(extension === "js")
+                        if(extension === "js" || extension == "ts")
                         {
                             const fetchMatch = /fetch\(([^,]+)(?:,([^)]*))?\)/.exec(callValue);
                             if (fetchMatch) {
