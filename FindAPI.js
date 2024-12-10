@@ -17,7 +17,7 @@ function matchAPIs(extractedData, extension)
                         const selfVariable = match[2]; // For self::$variable
                         const jsLocalVariable = match[3]; // For /:variable
                         const concatVariable = match[4]; // For +variable+
-                        const pyLocalVariable = match[5].split(":")[1]; // For <int:string:variable>
+                        const pyLocalVariable = (match[5] !== undefined && match[5].includes(":")) ? match[5].split(":")[1] : match[5];
 
                         let newVariableName = curlyVariable || selfVariable || jsLocalVariable || concatVariable || pyLocalVariable; // Get the variable name
                         let suffixIndex = 1;
@@ -26,7 +26,8 @@ function matchAPIs(extractedData, extension)
                         if (selfVariable) {
                             newVariableName = `$${selfVariable}`;
                         } 
-
+                        
+                        console.log(variableNames);
                         // Ensure the variable name is unique
                         while (variableNames.includes(newVariableName)) {
                             newVariableName = `${newVariableName}_${suffixIndex}`; // Append suffix

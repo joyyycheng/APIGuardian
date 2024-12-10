@@ -117,8 +117,8 @@ function activate(context) {
                         phpFile.push(php)
                         break;
                     case "tsx":
-                        const php = extractElements(fileContent, path.basename(document.fileName, path.extname(document.fileName)), fileExtension, file.fsPath);
-                        phpFile.push(php)
+                        const tsx = extractElements(fileContent, path.basename(document.fileName, path.extname(document.fileName)), fileExtension, file.fsPath);
+                        tsFile.push(tsx)
                         break;
                     default:
                         vscode.window.showInformationMessage('No specific action for this file extension.');
@@ -165,7 +165,7 @@ function activate(context) {
                 matchFileInfo(tsFile);
                 let tsResults = matchAPIs(tsFile, "tsx");
                 apiResults4 = await fetchApiResults(tsResults, tsFile, "tsx");
-                processFiles(phpFile, apiResults4, "tsx", context, hoverProviders);
+                processFiles(tsFile, apiResults4, "tsx", context, hoverProviders);
             } catch (error) {
                 console.error("Error processing TS files:", error);
             }
