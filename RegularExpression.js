@@ -78,18 +78,22 @@ function extractElements(codes, fileName, extension, filePath)
 
     while ((match = variableRegex.exec(code)) !== null) {
         if (extension == "js" || extension == "tsx") {
+            let type;
             let key = (match[2] && match[2].trim()) ? match[2].trim() : (match[4] && match[4].trim());
+            if(match[4] != undefined)
+            {
+               type = "localhost"
+            }
             let newKey = key; 
             let count = 1;
             let value = (match[3] && match[3].trim()) ? match[3].trim() : (match[5] && match[5].trim());
             match[3] = value;
 
-    
             while (variables.has(newKey)) {
                 newKey = `${key}_${count}`; 
                 count++;
             }
-            
+
             if (!value.trim().endsWith(";")) {
                 let collectedValue = value; 
                 let braceCount = 0;
@@ -114,126 +118,78 @@ function extractElements(codes, fileName, extension, filePath)
                 value = collectedValue; 
             }     
 
-            express = newKey;
-            let appListenRegex = new RegExp(`\.listen\\((.*?)\\)`, 'g');
-            let match1;
-            while ((match1 = appListenRegex.exec(code)) !== null) {
-                expressPortVar = match1[1].trim().split(',')[0];
-                break;
-            }
-            
-            if(newKey == expressPortVar)
+            if(type == "localhost")
             {
-                expressURL = `http://localhost:${value.replace(';', '')}`
-            }
-
-            if(expressPortVar != undefined)
-            {
-                if(key == "get" || key == "post" || key == "put" || key == "delete")
-                {
-                    let valueURL = value.split(',').map(item => item.replace(/'/g, ''));
-                    const containsValue = Array.from(variables.values()).includes(expressURL + valueURL[0]);
-                    let containCount = 1;
-                    if(containsValue)
-                    {
-                        match[3] = containCount + "_" + expressURL + valueURL[0];
-                        containCount++;
-                    } else 
-                    {
-                        match[3] = expressURL + valueURL[0];
-                    }
-                    
-                    variables.set("url_"+newKey,  expressURL + valueURL[0]);
-                }
-            }
-
-            if(value.includes("process.env."))
-            {
-                let projectRoot;
-                let envFilePath;
-                projectRoot = path.dirname(filePath); // Change to your project's root directory if needed
-                envFilePath = findEnvFile(projectRoot);
-                if(envFilePath == undefined)
-                {
-                    projectRoot = path.dirname(path.dirname(filePath)); // Change to your project's root directory if needed
-                    envFilePath = findEnvFile(projectRoot);
-                }
-                const data = fs.readFileSync(envFilePath, 'utf8');
-                console.log("data: ", data);
+                let appListenRegex = new RegExp(`\.listen\\((.*?)\\)`, 'g');
                 let match1;
-                let envRegrex = /^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*['"]([^'"]+)['"]\s*$/gm
-                while ((match1 = envRegrex.exec(data)) !== null) {
-                    const regex = /process\.env\.([^"]+)/;
-                    const match2 = value.match(regex);
-                    if(match2[1] == match1[1])
+                let expressURl;
+                while ((match1 = appListenRegex.exec(code)) !== null) {
+                    expressPortVar = match1[1].trim().split(',')[0];
+                    break;
+                }
+
+                if(expressPort != undefined)
+                {
+                    expressURL = `http://localhost:${value.replace(';', '')}`
+                    if(key == "get" || key == "post" || key == "put" || key == "delete")
                     {
-                        value = match1[2];
-                        variables.set(newKey, value);
-                        break;
+                        let valueURL = value.split(',').map(item => item.replace(/'/g, ''));
+                        const containsValue = Array.from(variables.values()).includes(expressURL + valueURL[0]);
+                        let containCount = 1;
+                        if(containsValue)
+                        {
+                            match[3] = containCount + "_" + expressURL + valueURL[0];
+                            containCount++;
+                        } else 
+                        {
+                            match[3] = expressURL + valueURL[0];
+                        }
+                        
+                        variables.set("url_"+newKey,  expressURL + valueURL[0]);
                     }
                 }
+            } else
+            {
+                let fetchRegres = /fetch\(['"`](https?:\/\/[^\)'"]+?)['"`]\s*,\s*\{([\s\S]+?)\}\)/g;
+                let fetchInfo = value.match(fetchRegres);
+                if(fetchInfo != undefined)
+                {
+                    for(var i = 0; i < fetchInfo.length; i++)
+                    {
+                        // the split not working properly
+                        const url = fetchInfo[i].split(',', 1);
+                        const optionIndex = fetchInfo[i].indexOf(',', url);
+                        let options = fetchInfo[i].substring(optionIndex + 1).trim();
+                        console.log(url, options)
+                        let methodType = options.match(/method:\s*'([^']+)'/);
+                        let method = methodMatch ? methodMatch[1] : null;
+                        variables.set("url_"+method,  url);
+
+                    }
+                }
+            }
+
+            if(key == "get" || key == "post" || key == "put" || key == "delete")
+            {
+                let valueURL = value.split(',').map(item => item.replace(/'/g, ''));
+                const containsValue = Array.from(variables.values()).includes(expressURL + valueURL[0]);
+                let containCount = 1;
+                if(containsValue)
+                {
+                    match[3] = containCount + "_" + expressURL + valueURL[0];
+                    containCount++;
+                } else 
+                {
+                    match[3] = expressURL + valueURL[0];
+                }
+                
+                variables.set("url_"+newKey,  expressURL + valueURL[0]);
             } else 
             {
                 variables.set(newKey, value.replace(';', ''));
-            }        
-    
-            if (match[3].includes("https") || match[3].includes("http")) {
-                const i = match[0].replace(/^\n/, '').replace(/\r\n/g, '');
-    
-                let apiKey = `${fileName}.${extension}`; 
-                let apiNewKey = apiKey;
-                count = 1;
-    
-                while (apiLocations.has(apiNewKey)) {
-                    apiNewKey = `${apiKey}_${count}`;
-                    count++;
-                }
-
-                apiLocations.set(apiNewKey, i + "|" + match[3]); 
-
-                const fetchPattern = /fetch\(['"`](https?:\/\/[^\)'"]+)[`'"]\s*,\s*\{([^}]+)\}/;
-                const fetchmatch = value.match(fetchPattern)
-                if(fetchmatch != undefined)
-                {
-                    const methodPattern = /method:\s*'([^']+)'/;
-                    const methodmatch = fetchmatch[2].match(methodPattern);
-                    const headersPattern = /headers:\s*\{([^}]+)\}/;
-                    const headermatch = value.match(headersPattern);
-                    variables.set("url_" + methodmatch[1], fetchmatch[1]);
-                    types.set("url_"+methodmatch[1], methodmatch[1]);
-                    variables.set("header", headermatch)
-                }
-
-
-                while ((match = typeRegex.exec(codes)) !== null) {
-                    const fetchArgs = match[1].trim();
-                    
-                    let args = fetchArgs.split(',');
-
-                    args = args.map(arg => arg.trim());
-
-                    if (args.length > 1) {
-                        types.set(newKey, 'POST');
-                        calls.set(newKey, match[0]);
-                    } else {
-                        types.set(newKey, 'GET');
-                    }
-                }
-                // fix this, the types got issue
-                if(express != undefined)
-                {
-                    if (newKey == "get") {
-                        types.set("url_"+newKey, 'GET');
-                        isPostFound = true;
-                    } else if (newKey == "post" || newKey == "put" || newKey == "delete") {
-                        types.set("url_"+newKey, 'POST');
-                        let callsvalue = value.split(',').map(item => item.replace(/'/g, ''));
-                        calls.set("url_"+newKey, callsvalue[1] + ',' + callsvalue[2]);
-                        isPostFound = true;
-                    }
-                }
-
             }
+
+
         } else if (extension == "py") {
             let key = match[1];
             let newKey = key;

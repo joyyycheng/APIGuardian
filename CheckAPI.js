@@ -45,7 +45,7 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
                                 callValue = callValueCandidate;
                                 break;
                             }
-                        }
+                        } 
                         let optionsParam = undefined;
                         let header = undefined;
                         let field = undefined;
@@ -54,6 +54,9 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
                             const fetchMatch = /fetch\(([^,]+)(?:,([^)]*))?\)/.exec(callValue);
                             if (fetchMatch) {
                                 optionsParam = fetchMatch[2]?.trim();
+                            } else
+                            {
+                                header = callValue
                             }
 
                         } else if(extension === "py")
@@ -128,7 +131,14 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
                                 headers: header,  // Set the content type to JSON
                                 body: field // Stringify the data to be sent in the body
                             };
-                        } else
+                        } else if (header != undefined)
+                        {
+                            transformedOptionsString = {
+                                method: requestType,  // HTTP method
+                                headers: header
+                                //body: JSON.stringify({})  // Stringify the data to be sent in the body
+                              };
+                        } else 
                         {
                             transformedOptionsString = {
                                 method: requestType,  // HTTP method
@@ -157,7 +167,8 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
                             if (requestType === "GET") {
                                 let response1;
                                 try {
-                                    response1 = await request(baseURL)['get'](path)
+                                    response1 = await request(baseURL)[transformedOptionsString.method.toLowerCase()](path)
+                                    .set(transformedOptionsString.headers)
                                     results_test.set(`${requestType}_${encodedUrl}`, { status:`${response1.status}`, message: `${response1.message || response1.body.message}`});
                                 } catch (error) {
                                     results_test.set(`${requestType}_${encodedUrl}`, { status:`${response1.status}`, message: `${error.message}`});
