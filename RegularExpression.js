@@ -118,52 +118,57 @@ function extractElements(codes, fileName, extension, filePath)
                 value = collectedValue; 
             }     
 
-            if(type == "localhost")
+            let appListenRegex = new RegExp(`\.listen\\((.*?)\\)`, 'g');
+            let match1;
+            while ((match1 = appListenRegex.exec(code)) !== null) {
+                expressPortVar = match1[1].trim().split(',')[0];
+                break;
+            }
+            
+            if(newKey == expressPortVar)
             {
-                let appListenRegex = new RegExp(`\.listen\\((.*?)\\)`, 'g');
-                let match1;
-                let expressURl;
-                while ((match1 = appListenRegex.exec(code)) !== null) {
-                    expressPortVar = match1[1].trim().split(',')[0];
-                    break;
-                }
+                expressURL = `http://localhost:${value.replace(';', '')}`
+            }
 
-                if(expressPort != undefined)
-                {
-                    expressURL = `http://localhost:${value.replace(';', '')}`
-                    if(key == "get" || key == "post" || key == "put" || key == "delete")
-                    {
-                        let valueURL = value.split(',').map(item => item.replace(/'/g, ''));
-                        const containsValue = Array.from(variables.values()).includes(expressURL + valueURL[0]);
-                        let containCount = 1;
-                        if(containsValue)
-                        {
-                            match[3] = containCount + "_" + expressURL + valueURL[0];
-                            containCount++;
-                        } else 
-                        {
-                            match[3] = expressURL + valueURL[0];
-                        }
-                        
-                        variables.set("url_"+newKey,  expressURL + valueURL[0]);
-                    }
-                }
-            } else
+
+            if(expressPortVar != undefined)
             {
-                let fetchRegres = /fetch\(['"`](https?:\/\/[^\)'"]+?)['"`]\s*,\s*\{([\s\S]+?)\}\)/g;
-                let fetchInfo = value.match(fetchRegres);
+                if(key == "get" || key == "post" || key == "put" || key == "delete")
+                {
+                    let valueURL = value.split(',').map(item => item.replace(/'/g, ''));
+                    const containsValue = Array.from(variables.values()).includes(expressURL + valueURL[0]);
+                    let containCount = 1;
+                    if(containsValue)
+                    {
+                        match[3] = containCount + "_" + expressURL + valueURL[0];
+                        containCount++;
+                    } else 
+                    {
+                        match[3] = expressURL + valueURL[0];
+                    }
+                    
+                    variables.set("url_"+newKey,  expressURL + valueURL[0]);
+                }
+            }
+            else
+            {   
+                let fetchInfo = value.match(typeRegex);
                 if(fetchInfo != undefined)
                 {
                     for(var i = 0; i < fetchInfo.length; i++)
                     {
                         // the split not working properly
-                        const url = fetchInfo[i].split(',', 1);
+                        let url = fetchInfo[i].split(',', 1);
                         const optionIndex = fetchInfo[i].indexOf(',', url);
                         let options = fetchInfo[i].substring(optionIndex + 1).trim();
-                        console.log(url, options)
+                        let urlValue = url[0].slice(url[0].indexOf('(') + 1).trim();
+                        console.log(urlValue, options)
                         let methodType = options.match(/method:\s*'([^']+)'/);
-                        let method = methodMatch ? methodMatch[1] : null;
-                        variables.set("url_"+method,  url);
+                        let method = methodType ? methodType[1] : null;
+                        variables.set("url_"+method,  urlValue);
+                        calls.set("url_"+method, options);
+                        types.set("url_"+method, method);
+                        
 
                     }
                 }
@@ -184,9 +189,53 @@ function extractElements(codes, fileName, extension, filePath)
                 }
                 
                 variables.set("url_"+newKey,  expressURL + valueURL[0]);
-            } else 
+                types.set("url_"+newKey, key);
+            }
+            
+            if(value.includes("process.env."))
+            {
+                let projectRoot;
+                let envFilePath;
+                projectRoot = path.dirname(filePath); // Change to your project's root directory if needed
+                envFilePath = findEnvFile(projectRoot);
+                if(envFilePath == undefined)
+                {
+                    projectRoot = path.dirname(path.dirname(filePath)); // Change to your project's root directory if needed
+                    envFilePath = findEnvFile(projectRoot);
+                }
+                const data = fs.readFileSync(envFilePath, 'utf8');
+                console.log("data: ", data);
+                let match1;
+                let envRegrex = /^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*['"]([^'"]+)['"]\s*$/gm
+                while ((match1 = envRegrex.exec(data)) !== null) {
+                    const regex = /process\.env\.([^"]+)/;
+                    const match2 = value.match(regex);
+                    if(match2[1] == match1[1])
+                    {
+                        value = match1[2];
+                        variables.set(newKey, value);
+                        break;
+                    }
+                }
+            }else 
             {
                 variables.set(newKey, value.replace(';', ''));
+            }
+
+            if (match[3].includes("https") || match[3].includes("http")) {
+                const i = match[0].replace(/^\n/, '').replace(/\r\n/g, '');
+    
+                let apiKey = `${fileName}.${extension}`; 
+                let apiNewKey = apiKey;
+                count = 1;
+    
+                while (apiLocations.has(apiNewKey)) {
+                    apiNewKey = `${apiKey}_${count}`;
+                    count++;
+                }
+
+                apiLocations.set(apiNewKey, i + "|" + match[3]); 
+
             }
 
 
