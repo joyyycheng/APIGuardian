@@ -39,7 +39,7 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
                             }
                         }
 
-                        let callValue = '';
+                        let callValue = undefined;
                         for (const [callKey, callValueCandidate] of fileData.calls) {
                             if (callKey === varKey) {
                                 callValue = callValueCandidate;
@@ -51,13 +51,30 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
                         let field = undefined;
                         if(extension === "js" || extension == "tsx")
                         {
-                            const fetchMatch = /fetch\(([^,]+)(?:,([^)]*))?\)/.exec(callValue);
-                            if (fetchMatch) {
-                                optionsParam = fetchMatch[2]?.trim();
-                            } else
+                            if(callValue != undefined)
                             {
-                                header = callValue
+                                optionsParam = callValue.split(",")[1];
+                                if(fileData.variables.has(optionsParam))
+                                {
+                                    if(requestType == '')
+                                    {
+                                        let optionValue = fileData.variables.get(optionsParam).trim();
+                                        let methodType = optionValue.match(/method:\s*["']([^"']+)["']/);
+                                        requestType = methodType ? methodType[1] : null;
+                                    }
+                                } else 
+                                {
+                                    optionsParam = callValue
+                                }
                             }
+
+                            // const fetchMatch = /fetch\(([^,]+)(?:,([^)]*))?\)/.exec(callValue);
+                            // if (fetchMatch) {
+                            //     optionsParam = fetchMatch[2]?.trim();
+                            // } else
+                            // {
+                            //     header = callValue
+                            // }
 
                         } else if(extension === "py")
                         {
@@ -95,59 +112,74 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
 
                         // Step 3: Look up values of urlParam and optionsParam in variables
                         const urlVariable =  finalUrl;
-                        const optionsVariable = fileData.variables.has(optionsParam) ? fileData.variables.get(optionsParam) : optionsParam;
-                        let transformedOptionsString;
-                        if(optionsVariable != undefined)
+                        let optionsVariable = fileData.variables.has(optionsParam) ? fileData.variables.get(optionsParam) : optionsParam;
+
+                        let transformedOptionsString = undefined;
+                        try {
+                            if (optionsVariable.endsWith(")")) {
+                                optionsVariable = optionsVariable.slice(0, -1);
+                            }
+                            // Check if the string is valid JSON
+                            transformedOptionsString = JSON.parse(optionsVariable);
+                        } catch (error) {
+                            // If parsing fails, treat it as a non-JSON value
+                            console.warn("Invalid JSON string, not parsing:", optionsVariable);
+                        }
+                        if(transformedOptionsString == undefined)
                         {
-                            if (optionsVariable.includes('json=') || optionsVariable.includes('data=')) {
-                                // Match json= or data= followed by a block of JSON-like data
-                                const match = optionsVariable.match(/(json=|data=)(\{[\s\S]*?\})/);
-                                if (match) {
-                                    const jsonContent = JSON.parse(match[2]); // The JSON content
-                                    transformedOptionsString = {
-                                        method: requestType,  // HTTP method
-                                        headers: {
-                                          "Content-Type": "application/json"  // Set the content type to JSON
-                                        },
-                                        body: JSON.stringify(jsonContent)  // Stringify the data to be sent in the body
-                                      };
+                            if(optionsVariable != undefined)
+                            {
+                                if (optionsVariable.includes('json=') || optionsVariable.includes('data=')) {
+                                    // Match json= or data= followed by a block of JSON-like data
+                                    const match = optionsVariable.match(/(json=|data=)(\{[\s\S]*?\})/);
+                                    if (match) {
+                                        const jsonContent = JSON.parse(match[2]); // The JSON content
+                                        transformedOptionsString = {
+                                            method: requestType,  // HTTP method
+                                            headers: {
+                                              "Content-Type": "application/json"  // Set the content type to JSON
+                                            },
+                                            body: JSON.stringify(jsonContent)  // Stringify the data to be sent in the body
+                                          };
+                                    }
+                                } else 
+                                {
+                                    let result = optionsVariable
+                                    .replace(/(\r\n|\r|\n)/g, '')              // Remove any line breaks for easier parsing
+                                    .replace(/([{,]\s*)(\w+):/g, '$1"$2":')    // Add double quotes around the keys to make it valid JSON
+                                    .replace(/JSON\.stringify\((.*?)\)/g, (match, p1) => {
+                                        const dataVariable = fileData.variables.get(p1.trim());
+                                        return JSON.stringify(dataVariable); // Replace with actual data object as JSON
+                                    });
+    
+                                    transformedOptionsString = JSON.parse(result);
                                 }
+                            } else if (header != undefined && field != undefined)
+                            {
+                                transformedOptionsString = {
+                                    method: requestType,  // HTTP method
+                                    headers: header,  // Set the content type to JSON
+                                    body: field // Stringify the data to be sent in the body
+                                };
+                            } else if (header != undefined)
+                            {
+                                transformedOptionsString = {
+                                    method: requestType,  // HTTP method
+                                    headers: header
+                                    //body: JSON.stringify({})  // Stringify the data to be sent in the body
+                                  };
                             } else 
                             {
-                                let result = optionsVariable
-                                .replace(/(\r\n|\r|\n)/g, '')              // Remove any line breaks for easier parsing
-                                .replace(/([{,]\s*)(\w+):/g, '$1"$2":')    // Add double quotes around the keys to make it valid JSON
-                                .replace(/JSON\.stringify\((.*?)\)/g, (match, p1) => {
-                                    const dataVariable = fileData.variables.get(p1.trim());
-                                    return JSON.stringify(dataVariable); // Replace with actual data object as JSON
-                                });
-
-                                transformedOptionsString = JSON.parse(result);
+                                transformedOptionsString = {
+                                    method: requestType,  // HTTP method
+                                    headers: {
+                                      "Content-Type": "application/json"  // Set the content type to JSON
+                                    },
+                                    body: JSON.stringify({})  // Stringify the data to be sent in the body
+                                  };
                             }
-                        } else if (header != undefined && field != undefined)
-                        {
-                            transformedOptionsString = {
-                                method: requestType,  // HTTP method
-                                headers: header,  // Set the content type to JSON
-                                body: field // Stringify the data to be sent in the body
-                            };
-                        } else if (header != undefined)
-                        {
-                            transformedOptionsString = {
-                                method: requestType,  // HTTP method
-                                headers: header
-                                //body: JSON.stringify({})  // Stringify the data to be sent in the body
-                              };
-                        } else 
-                        {
-                            transformedOptionsString = {
-                                method: requestType,  // HTTP method
-                                headers: {
-                                  "Content-Type": "application/json"  // Set the content type to JSON
-                                },
-                                body: JSON.stringify({})  // Stringify the data to be sent in the body
-                              };
                         }
+                        
                         
 
                         // Clean up the URL value for the request
@@ -159,6 +191,10 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
                         const baseURL = url.origin;
                         const path = url.pathname + url.search;
 
+                        if(requestType == '')
+                        {
+                            requestType = "GET";
+                        }
                         try {
                             let response = '';
                             const results_test = new Map();
@@ -167,7 +203,7 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
                             if (requestType === "GET") {
                                 let response1;
                                 try {
-                                    response1 = await request(baseURL)[transformedOptionsString.method.toLowerCase()](path)
+                                    response1 = await request(baseURL)['get'](path)
                                     .set(transformedOptionsString.headers)
                                     results_test.set(`${requestType}_${encodedUrl}`, { status:`${response1.status}`, message: `${response1.message || response1.body.message}`});
                                 } catch (error) {

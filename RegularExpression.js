@@ -162,14 +162,12 @@ function extractElements(codes, fileName, extension, filePath)
                         const optionIndex = fetchInfo[i].indexOf(',', url);
                         let options = fetchInfo[i].substring(optionIndex + 1).trim();
                         let urlValue = url[0].slice(url[0].indexOf('(') + 1).trim();
-                        console.log(urlValue, options)
                         let methodType = options.match(/method:\s*'([^']+)'/);
                         let method = methodType ? methodType[1] : null;
                         variables.set("url_"+method,  urlValue);
                         calls.set("url_"+method, options);
                         types.set("url_"+method, method);
-                        
-
+                    
                     }
                 }
             }
@@ -236,6 +234,14 @@ function extractElements(codes, fileName, extension, filePath)
 
                 apiLocations.set(apiNewKey, i + "|" + match[3]); 
 
+            }
+
+            while ((match = typeRegex.exec(codes)) !== null) {
+                const fetchArgs = match[1].trim();
+                
+                let args = fetchArgs.split(',');
+                args = args.map(arg => arg.trim());
+                calls.set(newKey, fetchArgs);
             }
 
 

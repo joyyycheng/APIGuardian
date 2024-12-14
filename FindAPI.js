@@ -62,6 +62,9 @@ function matchAPIs(extractedData, extension)
                 }
             }
 
+            for (const [key, value] of fileData.calls.entries()) {
+            }
+
             let newURLS = processUrls(urls, extension);
             let count  = 1;
             for(let i = 0; i < newURLS.length; i++){

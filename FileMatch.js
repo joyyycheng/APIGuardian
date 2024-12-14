@@ -41,6 +41,7 @@ function matchFileInfo(extractedData, fileNames) {
         for (const [fileName, fileData] of fileMap) {
             const functions = fileData.functions;
             const variables = fileData.variables;
+            const calls = fileData.calls;
     
             // Iterate over function definitions
             for (const [functionName, params] of functions) {
@@ -92,10 +93,38 @@ function matchFileInfo(extractedData, fileNames) {
                     console.log(`Function ${functionName} in ${fileName} has no matching calls.`);
                 }
             }
+
+            const usageCount = new Map();
+            for (let [callsName, callValue] of calls) {
+                const variableRegex = /\${(.*?)\}|\.?\s*self::\$(\w+)\s*\.|\/:(\w+)|\+([^+]+)\+|<(?:int|string):([^>]+)>/g
+                let match = [...callValue.matchAll(variableRegex)].map(m => ({
+                    fullMatch: m[0], // The full matched text
+                    variable: m[1] || m[2] || m[3] || m[4] || m[5], // Extract the variable name
+                }));
+
+                if(match.length > 0)
+                {
+                    for (const { fullMatch, variable } of match) {
+                    {
+                        const count = usageCount.get(variable) || 0;
+                        usageCount.set(variable, count + 1);
+                        const modifiedVariable = count > 0 ? `${variable}_${count}` : variable;
+                        
+                        if(variables.has(modifiedVariable))
+                        {
+                            const value = variables.get(modifiedVariable);
+                            let newVal = callValue.replace(fullMatch, value).replace(/['`]/g, '"').replace(/[\n\r]+/g, ' ').replace(/\s{2,}/g, ' ').replace(/(\w+):/g, '"$1":')
+                            calls.set(callsName, newVal);
+                        }
+                        
+                    }
+                }
+
+            }
         }
     }
     
-
+}
 }
 
 module.exports = { matchFileInfo };
