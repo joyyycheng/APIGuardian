@@ -1,3 +1,5 @@
+
+const start = require('repl');
 const vscode = require('vscode');
 const fs = require('fs');
 const path = require('path');
@@ -22,6 +24,7 @@ function activate(context) {
         clearHoverProviders();
         const editor = vscode.window.activeTextEditor;
         if (editor) {
+            const startTime = performance.now();
             const searchQuery = await vscode.window.showQuickPick(
                 ['Skip', 'Scan'],  // The list of options for the user to choose from
                 {
@@ -203,8 +206,10 @@ function activate(context) {
             //DeleteDatabase();
 
             });
+
+            const endTime = performance.now()
             vscode.window.showInformationMessage("Report generated at " + path.join(path.dirname(editor.document.uri.fsPath), 'reports'));
-            vscode.window.showInformationMessage("API status check completed.");
+            vscode.window.showInformationMessage("API status check completed : " + ((endTime-startTime)/1000).toFixed(2) + "s");
 
             });
 
