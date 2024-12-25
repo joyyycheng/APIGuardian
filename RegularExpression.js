@@ -19,7 +19,7 @@ function extractElements(codes, fileName, extension, filePath)
             variableRegex = /^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.+)$|^\s*\S+\.route\s*\(([^)]+)\)\s*;?/gm;
             functionRegex = /^\s*def\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\((.*?)\)\s*:/gm;
             // the from .. import got an error
-            importRegex = /^\s*(import\s+([a-zA-Z_][a-zA-Z0-9_.]*))\s*\r?\n|^\s*from\s+([a-zA-Z_][a-zA-Z0-9_.]*)\s+import\s+([a-zA-Z_][a-zA-Z0-9_,\s]*)\s*$/gm;
+            importRegex = /^\s*(?:import\s+([a-zA-Z_][a-zA-Z0-9_.]*(?:\s+as\s+[a-zA-Z_][a-zA-Z0-9_]+)?))\s*(?:,\s*[a-zA-Z_][a-zA-Z0-9_.]*(?:\s+as\s+[a-zA-Z_][a-zA-Z0-9_]+)?)*\s*|\s*from\s+([a-zA-Z_][a-zA-Z0-9_.]*)\s+import\s+((?:[a-zA-Z_][a-zA-Z0-9_]*(?:\s+as\s+[a-zA-Z_][a-zA-Z0-9_]+)?\s*,\s*)*[a-zA-Z_][a-zA-Z0-9_]*(?:\s+as\s+[a-zA-Z_][a-zA-Z0-9_]+)?)\s*$/gm;
             typeRegex = /\.(get|post|put|delete)\(([\s\S]*?)\)/g;
             break; 
         case "js":
@@ -189,6 +189,8 @@ function extractElements(codes, fileName, extension, filePath)
                 variables.set("url_"+newKey,  expressURL + valueURL[0]);
                 types.set("url_"+newKey, key);
             }
+
+            
             
             if(value.includes("process.env."))
             {
@@ -198,20 +200,41 @@ function extractElements(codes, fileName, extension, filePath)
                 envFilePath = findEnvFile(projectRoot);
                 if(envFilePath == undefined)
                 {
-                    projectRoot = path.dirname(path.dirname(filePath)); // Change to your project's root directory if needed
-                    envFilePath = findEnvFile(projectRoot);
+                    let projectRoot = path.dirname(path.dirname(filePath)); // Change to your project's root directory if needed
+
+                    while (!envFilePath && projectRoot) {
+                        envFilePath = findEnvFile(projectRoot);
+
+                        if (!envFilePath) {
+                            const parentDir = path.dirname(projectRoot);
+
+                            // Stop looping if we've reached the root directory
+                            if (parentDir === projectRoot) {
+                                break;
+                            }
+
+                            projectRoot = parentDir;
+                        }
+                    }
                 }
                 const data = fs.readFileSync(envFilePath, 'utf8');
                 console.log("data: ", data);
                 let match1;
-                let envRegrex = /^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*['"]([^'"]+)['"]\s*$/gm
+                let envRegrex = /^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*['"]?([^'"\n]+)['"]?\s*$/gm
                 while ((match1 = envRegrex.exec(data)) !== null) {
-                    const regex = /process\.env\.([^"]+)/;
+                    //const regex = /\${process\.env\.([a-zA-Z_][a-zA-Z0-9_]*)}/g;
+                    const regex =  /process\.env\.([^"]+)/
                     const match2 = value.match(regex);
-                    if(match2[1] == match1[1])
+                    const variableName = match2[0].match(/process\.env\.([a-zA-Z_][a-zA-Z0-9_]*)/)[1];
+                    if(variableName == match1[1])
                     {
-                        value = match1[2];
+                        match1[2] = match1[2].replace(/[\n\r]/g, '');
+                        value = value.replace(match2[1],  match1[2]).replace(/[`;]/g, '');
                         variables.set(newKey, value);
+                        if(!types.has(newKey))
+                        {
+                            types.set(newKey, "GET");
+                        }
                         break;
                     }
                 }
@@ -311,8 +334,20 @@ function extractElements(codes, fileName, extension, filePath)
                 envFilePath = findEnvFile(projectRoot);
                 if(envFilePath == undefined)
                 {
-                    projectRoot = path.dirname(path.dirname(filePath)); // Change to your project's root directory if needed
-                    envFilePath = findEnvFile(projectRoot);
+                    while (!envFilePath && projectRoot) {
+                        envFilePath = findEnvFile(projectRoot);
+
+                        if (!envFilePath) {
+                            const parentDir = path.dirname(projectRoot);
+
+                            // Stop looping if we've reached the root directory
+                            if (parentDir === projectRoot) {
+                                break;
+                            }
+
+                            projectRoot = parentDir;
+                        }
+                    }
                 }
 
                 const data = fs.readFileSync(envFilePath, 'utf8');

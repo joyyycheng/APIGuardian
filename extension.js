@@ -26,10 +26,10 @@ function activate(context) {
         if (editor) {
             const startTime = performance.now();
             const searchQuery = await vscode.window.showQuickPick(
-                ['Skip', 'Scan'],  // The list of options for the user to choose from
+                ['Scan', 'Skip'],  // The list of options for the user to choose from
                 {
-                  placeHolder: "Would you like to Skip or Scan Files",
-                  prompt: "Select Skip or Scan",
+                  placeHolder: "Would you like to Scan or Skip Files",
+                  prompt: "Select Scan or Skip",
                   canPickMany: false  // Only allow a single selection
                 }
               );
@@ -132,6 +132,7 @@ function activate(context) {
             try {
                 matchFileInfo(jsFile);
                 let jsResults = matchAPIs(jsFile, "js");
+                console.log(jsResults)
                 apiResults1 = await fetchApiResults(jsResults, jsFile, "js");
                 processFiles(jsFile, apiResults1, "js", context, hoverProviders);
             } catch (error) {
@@ -208,6 +209,7 @@ function activate(context) {
             });
 
             const endTime = performance.now()
+            console.log("Total time taken: ", (endTime-startTime)/1000);
             vscode.window.showInformationMessage("Report generated at " + path.join(path.dirname(editor.document.uri.fsPath), 'reports'));
             vscode.window.showInformationMessage("API status check completed : " + ((endTime-startTime)/1000).toFixed(2) + "s");
 

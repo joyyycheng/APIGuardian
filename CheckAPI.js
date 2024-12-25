@@ -111,7 +111,12 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
                         
 
                         // Step 3: Look up values of urlParam and optionsParam in variables
-                        const urlVariable =  finalUrl;
+                        let newURL1 = finalUrl.match(/https?:\/\//i);
+                        let urlVariable = finalUrl;
+                        if(newURL1)
+                        {
+                            urlVariable = finalUrl.substring(newURL.index).replace(/[()'""]/g, '');
+                        } 
                         let optionsVariable = fileData.variables.has(optionsParam) ? fileData.variables.get(optionsParam) : optionsParam;
 
                         let transformedOptionsString = undefined;
@@ -151,8 +156,13 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
                                         const dataVariable = fileData.variables.get(p1.trim());
                                         return JSON.stringify(dataVariable); // Replace with actual data object as JSON
                                     });
-    
-                                    transformedOptionsString = JSON.parse(result);
+                                    try {
+
+                                        transformedOptionsString = JSON.parse(result);
+                                    } catch (error) {
+                                        // If parsing fails, treat it as a non-JSON value
+                                        console.warn("Invalid JSON string, not parsing:", optionsVariable);
+                                    }
                                 }
                             } else if (header != undefined && field != undefined)
                             {
@@ -203,9 +213,16 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
                             if (requestType === "GET") {
                                 let response1;
                                 try {
-                                    response1 = await request(baseURL)['get'](path)
-                                    .set(transformedOptionsString.headers)
-                                    results_test.set(`${requestType}_${encodedUrl}`, { status:`${response1.status}`, message: `${response1.message || response1.body.message}`});
+                                    if(transformedOptionsString == undefined)
+                                    {
+                                        response1 = await request(baseURL)['get'](path)
+                                        results_test.set(`${requestType}_${encodedUrl}`, { status:`${response1.status}`, message: `${response1.message || response1.body.message}`});  
+                                    } else
+                                    {
+                                        response1 = await request(baseURL)['get'](path)
+                                        .set(transformedOptionsString.headers)
+                                        results_test.set(`${requestType}_${encodedUrl}`, { status:`${response1.status}`, message: `${response1.message || response1.body.message}`});
+                                    }
                                 } catch (error) {
                                     results_test.set(`${requestType}_${encodedUrl}`, { status:`${response1.status}`, message: `${error.message}`});
                                 }
