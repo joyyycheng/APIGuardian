@@ -1,3 +1,21 @@
+/**
+ * @file This is the file where the hover messages are created and displayed in the editor.
+ * @description When a user hovers over the API in the codebase, the hover message will display a message with the API information. 
+ * If there was an error, the hover message will display more information like error message, error code, etc.
+ * If there was no error, the hover mesage will display the full API url and the status code. 
+ *
+ * @author Joy Cheng Yee Shing
+ * @sponsor Wizvision Pte Ltd
+ * @project API Guardian - Visual Studio Code Extension [Singapore Institute of Technology | University of Glasgow]
+ * @date 2024
+ *
+ * Copyright (c) [2024] [Joy Cheng Yee Shing]. All rights reserved.
+ * Licensed under the [MIT License].
+ * For full license terms, refer to the LICENSE file in the project root.
+ *
+ * This project is part of CSC3101 Capstone Project & CSC3102B Integrated Work Study Programme (AY2024/2025) at [Singapore Institute of Technology | University of Glasgow]
+ * @date 2024
+ */
 const vscode = require('vscode');
 
 

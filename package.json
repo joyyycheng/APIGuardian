@@ -31,7 +31,8 @@
   "scripts": {
     "lint": "eslint .",
     "pretest": "npm run lint",
-    "test": "vscode-test"
+    "test": "vscode-test",
+    "postinstall": "npm install"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.8",

@@ -1,3 +1,20 @@
+/**
+ * @file This is the file where we match the variables used in the API with values in the codebase.
+ * @description The file contains the function matchAPIs which takes the extracted data and the extension of the codebase 
+ * as input and returns a map of API URLs with the variables replaced with their values.
+ * @author Joy Cheng Yee Shing
+ * @sponsor Wizvision Pte Ltd
+ * @project API Guardian - Visual Studio Code Extension [Singapore Institute of Technology | University of Glasgow]
+ * @date 2024
+ *
+ * Copyright (c) [2024] [Joy Cheng Yee Shing]. All rights reserved.
+ * Licensed under the [MIT License].
+ * For full license terms, refer to the LICENSE file in the project root.
+ *
+ * This project is part of CSC3101 Capstone Project & CSC3102B Integrated Work Study Programme (AY2024/2025) at [Singapore Institute of Technology | University of Glasgow]
+ * @date 2024
+ */
+
 function matchAPIs(extractedData, extension)
 {
     const variableRegex = /\{(.*?)\}|\.?\s*self::\$(\w+)\s*\.|\/:(\w+)|\+([^+]+)\+|<([^>]+)>/g;

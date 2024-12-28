@@ -1,3 +1,20 @@
+/**
+ * @file This file will help to link variables across files
+ * @description We will connect the variables across files based on the functions, function calls, and imports.
+ *
+ * @author Joy Cheng Yee Shing
+ * @sponsor Wizvision Pte Ltd
+ * @project API Guardian - Visual Studio Code Extension [Singapore Institute of Technology | University of Glasgow]
+ * @date 2024
+ *
+ * Copyright (c) [2024] [Joy Cheng Yee Shing]. All rights reserved.
+ * Licensed under the [MIT License].
+ * For full license terms, refer to the LICENSE file in the project root.
+ *
+ * This project is part of CSC3101 Capstone Project & CSC3102B Integrated Work Study Programme (AY2024/2025) at [Singapore Institute of Technology | University of Glasgow]
+ * @date 2024
+ */
+
 function matchFileInfo(extractedData, fileNames) {
     // Loop through each file's data
 

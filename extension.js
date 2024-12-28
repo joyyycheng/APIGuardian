@@ -1,3 +1,20 @@
+/**
+ * @file This is the main file for the API Guardian which contains the activation and deactivation functions for the extension.
+ * @description This file contains the implementation of the API Guardian extension for Visual Studio Code. 
+ * The extension scans and checks APIs in various programming languages and provides status reports.
+ *
+ * @author Joy Cheng Yee Shing
+ * @sponsor Wizvision Pte Ltd
+ * @project API Guardian - Visual Studio Code Extension [Singapore Institute of Technology | University of Glasgow]
+ * @date 2024
+ *
+ * Copyright (c) [2024] [Joy Cheng Yee Shing]. All rights reserved.
+ * Licensed under the [MIT License].
+ * For full license terms, refer to the LICENSE file in the project root.
+ *
+ * This project is part of CSC3101 Capstone Project & CSC3102B Integrated Work Study Programme (AY2024/2025) at [Singapore Institute of Technology | University of Glasgow]
+ * @date 2024
+ */
 
 const start = require('repl');
 const vscode = require('vscode');
@@ -53,15 +70,6 @@ function activate(context) {
                 vscode.window.showInformationMessage('You have exited the application');
                 return;
             }
-            // const searchQuery_DB = await vscode.window.showInputBox({
-            //     placeHolder: "Y/N",
-            //     prompt: "Do you need a database ( if yes, please create a txt file 'API_GUARDIAN_DATABASE.txt' with the requried information for connection)",
-            //     value: ""
-            // });
-            // if(searchQuery_DB == "Y")
-            // {
-            //     accessDatabase_SQL();
-            // }
             const searchArray = search1Query.split('|').map(item => item.trim());
 
             vscode.window.withProgress(

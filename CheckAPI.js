@@ -1,3 +1,21 @@
+/**
+ * @file This file is where the main testing of the APIs will be done. If there are any errors, we will search for information that would be displayed to the user
+ * The resuls will also be exported into an excel file
+ * @description We will retrieve any headers, bodys, and other parameters and test the APIs. The results are saved in a map and then passed into another function to create the hover messages. 
+ *
+ * @author Joy Cheng Yee Shing
+ * @sponsor Wizvision Pte Ltd
+ * @project API Guardian - Visual Studio Code Extension [Singapore Institute of Technology | University of Glasgow]
+ * @date 2024
+ *
+ * Copyright (c) [2024] [Joy Cheng Yee Shing]. All rights reserved.
+ * Licensed under the [MIT License].
+ * For full license terms, refer to the LICENSE file in the project root.
+ *
+ * This project is part of CSC3101 Capstone Project & CSC3102B Integrated Work Study Programme (AY2024/2025) at [Singapore Institute of Technology | University of Glasgow]
+ * @date 2024
+ */
+
 const axios = require('axios');
 const vscode = require('vscode');
 const fs = require('fs');

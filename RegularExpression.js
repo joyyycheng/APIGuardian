@@ -1,3 +1,27 @@
+/**
+ * @file This file will retrieve all the contents in the code being scanned and place them into a JS map.
+ * @description Based on the extension of the file, the code will be scanned and the following elements will be extracted:
+ * - Variables
+ * - Functions
+ * - Imports
+ * - Function Calls
+ * - API Locations
+ * - Types
+ * - Calls
+ *
+ * @author Joy Cheng Yee Shing
+ * @sponsor Wizvision Pte Ltd
+ * @project API Guardian - Visual Studio Code Extension [Singapore Institute of Technology | University of Glasgow]
+ * @date 2024
+ *
+ * Copyright (c) [2024] [Joy Cheng Yee Shing]. All rights reserved.
+ * Licensed under the [MIT License].
+ * For full license terms, refer to the LICENSE file in the project root.
+ *
+ * This project is part of CSC3101 Capstone Project & CSC3102B Integrated Work Study Programme (AY2024/2025) at [Singapore Institute of Technology | University of Glasgow]
+ * @date 2024
+ */
+
 const fs = require('fs');
 const path = require('path');
 
