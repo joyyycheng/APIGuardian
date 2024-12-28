@@ -132,7 +132,6 @@ function activate(context) {
             try {
                 matchFileInfo(jsFile);
                 let jsResults = matchAPIs(jsFile, "js");
-                console.log(jsResults)
                 apiResults1 = await fetchApiResults(jsResults, jsFile, "js");
                 processFiles(jsFile, apiResults1, "js", context, hoverProviders);
             } catch (error) {
@@ -141,6 +140,7 @@ function activate(context) {
             try {
                 matchFileInfo(pyFile);
                 let pyResults = matchAPIs(pyFile, "py");
+                console.log(pyResults);
                 apiResults2 = await fetchApiResults(pyResults, pyFile, "py");
                 processFiles(pyFile, apiResults2, "py", context, hoverProviders);
             } catch (error) {
@@ -184,7 +184,6 @@ function activate(context) {
                 return mergedMap;
             };
             
-            // Example usage
             const merged = safeMerge(apiResults, apiResults1, apiResults2, apiResults3, apiResults4);
             
             let statuses = [];
@@ -204,7 +203,6 @@ function activate(context) {
             async (progress) => {
               
             generateReport(path.dirname(editor.document.uri.fsPath), similarTexts, [...merged]);
-            //DeleteDatabase();
 
             });
 

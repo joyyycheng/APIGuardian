@@ -738,21 +738,47 @@ function extractElements(codes, fileName, extension, filePath)
             
         } else if(extension == "py")
         {
-            for (let i = 0; i < params.length; i++) {
-                let param = params[i];  // Trim any leading/trailing whitespace
-            
-                if (param !== param.trim()) {
-                    param = param.trim(); // Trim if there is whitespace
+            if(functionName == undefined)
+            {
+                for (let i = 0; i < params.length; i++) {
+                    let param = params[i];  // Trim any leading/trailing whitespace
+                
+                    if (param !== param.trim()) {
+                        param = param.trim(); // Trim if there is whitespace
+                    }
+                
+                    const regex = new RegExp(`(?<!\\w)(${param})\\s*\\((.*?)\\)`, 'g'); // Separate regex for each param
+                
+                    let match;
+                    while ((match = regex.exec(code)) !== null) {
+                        const args = match[2] ? match[2].split(',').map(arg => arg.trim()) : []; // Get arguments
+                        functionCalls.set(param, args);
+                    }
                 }
-            
-                const regex = new RegExp(`(?<!\\w)(${param})\\s*\\((.*?)\\)`, 'g'); // Separate regex for each param
-            
-                let match;
-                while ((match = regex.exec(code)) !== null) {
-                    const args = match[2] ? match[2].split(',').map(arg => arg.trim()) : []; // Get arguments
-                    functionCalls.set(param, args);
+            } else
+            {
+                let params = functionName
+                if(functionName.includes(","))
+                {
+                    params = functionName.split(',').map(item => item.trim());
+                }
+                for (let i = 0; i < params.length; i++) {
+                    let param = params[i];  // Trim any leading/trailing whitespace
+                
+                    if (param !== param.trim()) {
+                        param = param.trim(); // Trim if there is whitespace
+                    }
+                
+                    const regex = new RegExp(`(?<!\\w)(${param})\\s*\\((.*?)\\)`, 'g'); // Separate regex for each param
+                
+                    let match;
+                    while ((match = regex.exec(code)) !== null) {
+                        const args = match[2] ? match[2].split(',').map(arg => arg.trim()) : []; // Get arguments
+                        functionCalls.set(param, args);
+                    }
                 }
             }
+
             
         } else if(extension == "cs")
         {

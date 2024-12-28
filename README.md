@@ -1,65 +1,24 @@
-# API Guardian README
+# API Guardian
+API Guardian is a Visual Studio Code extension designed to scan your project for APIs. Once the APIs are identified, they will be tested, and a report will be generated containing the full API, its file location, status, and a corresponding message. Developers can also hover over the APIs found in their project a pop-up messaage will appear based on the status of your API. This extension currently works for JavaScript, TypeScript, Python, CSharp and PHP. 
 
-This extension will help to check all the available api endpoints that are found in your code. 
+This project was created as Postman can be a tedious and long process when testing multiple APIs in your project. This extension can help to simplify and shorten the time taken for manual debugging and testing giving you more time for development. 
 
 ## Features
+- Scan your project for APIs, below are examples of the type of API we are able to scan
+    1. http://api.weatherapi.com/v1/forecast.json?key={apikey}&q={country}&days={number_of_days}
+    2. https://www.onemap.gov.sg/api/common/elastic/search?searchVal={country}&returnGeom={address_details}=Y&pageNum={number}
+    3. https://eventregistry.org/api/v1/minuteStreamArticles?lang=eng&recentActivityArticlesUpdatesAfterMinsAgo=240&isDuplicateFilter=skipDuplicates&apiKey={api_key}
+    
+- An Excel report containing this information will be generated and exported to your project.
+    1. Number of APIs found in your project
+    2. Number of Successfully tested APIs in your project
+    3. Number of Failed tested APIs in your project
+    4. Full APIs
+    5. File Location of where the API was found
+    6. Status of the API
+    7. Message of the API
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- Hover message when the developer mouse over the API found in the project
+![](https://github.com/joyyycheng/CAPSTONE/blob/main/SuccessMessage.gif)
 
-For example if there is an image subfolder under your extension project workspace:
 
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
-
-## Requirements
-
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
-
-## Extension Settings
-
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
-
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code.  Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux)
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux)
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**

@@ -9,16 +9,14 @@ function matchFileInfo(extractedData, fileNames) {
             // Check if the file has imports
             if (fileImports && fileImports.size > 0) {
                 // fileName : main
-                for(const [key, value] of fileData.functionCalls)
-                {
+                for (const [key, value] of fileData.functionCalls) {
                     const functionName = key;
                     const results = [];
                     for (const param of value) {
                         let matched = false;
     
-                        // Check against variables to find a match for the function call parameter
+                        // Check against variables in the current file
                         for (const [variableKey, variableValue] of fileData.variables) {
-                            // If the parameter matches a variable
                             if (param === variableKey) {
                                 results.push(variableValue);
                                 matched = true;
@@ -26,16 +24,39 @@ function matchFileInfo(extractedData, fileNames) {
                             }
                         }
     
-                        // If no match was found in variables, treat it as a direct value
+                        // If no match is found in the current file, check other files
+                        if (!matched) {
+                            for (const otherFileMap of extractedData) {
+                                for (const [otherFileName, otherFileData] of otherFileMap) {
+                                    if (otherFileName !== fileName) { // Avoid re-checking the same file
+                                        for (const [otherVariableKey, otherVariableValue] of otherFileData.variables) {
+                                            if (param === otherVariableKey) {
+                                                results.push(otherVariableValue);
+                                                matched = true;
+                                                break; // Stop searching once a match is found
+                                            }
+                                        }
+                                        if (matched) break; // Stop searching other files once a match is found
+                                    }
+                                }
+                                if (matched) break; // Stop searching other fileMaps once a match is found
+                            }
+                        }
+    
+                        // If still no match, treat it as a direct value
                         if (!matched) {
                             results.push(param); // Directly add the literal value
                         }
                     }
-                    functionFound.set(functionName, results);
+                    if(!functionFound.has(functionName))
+                    {
+                        functionFound.set(functionName, results);
+                    }
                 }
             }
         }
     }
+    
 
     for (const fileMap of extractedData) {
         for (const [fileName, fileData] of fileMap) {
