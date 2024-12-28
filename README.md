@@ -6,8 +6,7 @@ This project was created as Postman can be a tedious and long process when testi
 ## Features
 - Scan your project for APIs, below are examples of the type of API we are able to scan
     1. http://api.weatherapi.com/v1/forecast.json?key={apikey}&q={country}&days={number_of_days}
-    2. https://www.onemap.gov.sg/api/common/elastic/search?searchVal={country}&returnGeom={address_details}=Y&pageNum={number}
-    3. https://eventregistry.org/api/v1/minuteStreamArticles?lang=eng&recentActivityArticlesUpdatesAfterMinsAgo=240&isDuplicateFilter=skipDuplicates&apiKey={api_key}
+    2. https://eventregistry.org/api/v1/minuteStreamArticles?lang=eng&recentActivityArticlesUpdatesAfterMinsAgo=240&isDuplicateFilter=skipDuplicates&apiKey={api_key}
     
 - An Excel report containing this information will be generated and exported to your project.
     1. Number of APIs found in your project
