@@ -19,6 +19,8 @@ This project was created as Postman can be a tedious and long process when testi
     7. Message of the API
 
 - Hover message when the developer mouse over the API found in the project
-![](https://github.com/joyyycheng/CAPSTONE/blob/main/SuccessMessage.gif)
+![](https://github.com/joyyycheng/CAPSTONE/blob/main/media/SuccessMessage.gif)
+![](https://github.com/joyyycheng/CAPSTONE/blob/main/media/Failedmessage.gif)
+
 
 
