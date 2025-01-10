@@ -81,12 +81,21 @@ If you have any questions or feedback, feel free to reach out to joyyyy.cheng@gm
 - **School**: Singapore Institute of Technology and University of Glasgow
 - **Course**: Bachelor of Science with Honours in Computing Science degree
 - **Instructor**: Dr Peter Yau
+<br>
+<div style="text-align: center;">
+    <img src="media\schoolLogo.png" width="50%" height="50%" alt="Success Message"/>
+</div>
+
 
 ## Sponsor
 
 This project is sponsored by Wizvision Pte Ltd. <br>
 WizVision is an established Information Communications Technologies (ICT) System provider based in Singapore.
 Its core capabilities lie in its design, development as well as maintenance of turnkey enterprise class software applications for both the public as well as the private sector. Wizvision has strong domain knowledge in transactional based applications such as e-payment and billing systems. Our clients include international banks, leading payment processors, large enterprises and government agencies.
+<br>
+<div style="text-align: center;">
+    <img src="media\wizvision.png" width="50%" height="50%" alt="Success Message"/>
+</div>
 
 ## Contact
 
