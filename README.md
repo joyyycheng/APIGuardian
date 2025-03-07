@@ -1,7 +1,11 @@
 # API Guardian
-API Guardian is a Visual Studio Code extension designed to scan your project for APIs. Once the APIs are identified, they will be tested, and a report will be generated containing the full API, its file location, status, and a corresponding message. Developers can also hover over the APIs found in their project a pop-up messaage will appear based on the status of your API. This extension currently works for JavaScript, TypeScript, Python, CSharp and PHP. 
 
-This project was created as Postman can be a tedious and long process when testing multiple APIs in your project. This extension can help to simplify and shorten the time taken for manual debugging and testing giving you more time for development. 
+API Guardian is a Visual Studio Code extension designed to scan your project for APIs. Once the APIs are identified, they will be tested, and a report will be generated containing the full API, its file location, status, and a corresponding message. Developers can also hover over the APIs found in their project a pop-up messaage will appear based on the status of your API. This extension currently works for JavaScript, TypeScript, Python, CSharp and PHP. This extension streamlines debugging and testing, reducing manual effort and allowing you to focus more on development.
+
+This project is part of a learning experience, and while we continuously work to enhance its functionality, we cannot guarantee specific performance outcomes or results. We appreciate your understanding and support as we refine this extension.
+
+As a limitation, the extension can scan GET, POST, UPDATE, and DELETE API endpoints in JavaScript, TypeScript, and Python. However, for C#, PHP, and Java, it currently supports scanning only GET API endpoints.
+
 
 ## Features
 - Scan your project for APIs, below are examples of the type of API we are able to scan

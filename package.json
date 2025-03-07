@@ -1,5 +1,5 @@
 {
-  "name": "apiguardian",
+  "name": "api",
   "displayName": "API Guardian",
   "description": "",
   "repository": {
@@ -7,7 +7,7 @@
     "url": "https://github.com/joyyycheng/APIGuardian.git"
   },
   "version": "0.0.2",
-  "publisher": "API Guardian",
+  "publisher": "APIGuardian-vsc",
   "engines": {
     "vscode": "^1.94.0"
   },
