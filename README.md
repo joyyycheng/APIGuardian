@@ -91,16 +91,6 @@ If you have any questions or feedback, feel free to reach out to joyyyy.cheng@gm
 </div>
 
 
-## Sponsor
-
-This project is sponsored by Wizvision Pte Ltd. <br>
-WizVision is an established Information Communications Technologies (ICT) System provider based in Singapore.
-Its core capabilities lie in its design, development as well as maintenance of turnkey enterprise class software applications for both the public as well as the private sector. Wizvision has strong domain knowledge in transactional based applications such as e-payment and billing systems. Our clients include international banks, leading payment processors, large enterprises and government agencies.
-<br>
-<div style="text-align: center;">
-    <img src="media/wizvision.png" width="40%" height="40%" alt="Success Message"/>
-</div>
-
 ## Contact
 
 For any questions or feedback, please reach out to joyyyy.cheng@gmail.com.

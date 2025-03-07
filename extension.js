@@ -40,12 +40,37 @@ function activate(context) {
         clearHoverProviders();
         const editor = vscode.window.activeTextEditor;
         if (editor) {
+
+            const apiKeySaved = await context.secrets.get('userApiKey');
+            if (apiKeySaved) {
+                vscode.window.showInformationMessage(`Your API key is already set.`);
+            } else {
+                vscode.window.showErrorMessage('No API key found. Please set one.');
+            }
+
+            if (!apiKeySaved) {
+                const apiKey = await vscode.window.showInputBox({
+                    prompt: 'Enter your API key (This will only be asked once)',
+                    ignoreFocusOut: true,
+                    password: true // Mask input for security
+                });
+        
+                if (apiKey) {
+                    await context.secrets.store('userApiKey', apiKey);
+                    vscode.window.showInformationMessage('API key saved successfully!');
+                } else {
+                    vscode.window.showErrorMessage('API key setup was canceled. Some features may not work.');
+                }
+            }
+
+            const existingKey = await context.secrets.get('userApiKey');
+
             const startTime = performance.now();
             const searchQuery = await vscode.window.showQuickPick(
-                ['Scan', 'Skip'],  // The list of options for the user to choose from
+                ['Scan', 'Skip', 'Update API Key'],  // The list of options for the user to choose from
                 {
-                  placeHolder: "Would you like to Scan or Skip Files",
-                  prompt: "Select Scan or Skip",
+                  placeHolder: "Would you like to Scan or Skip Files or Update API Key?",
+                  prompt: "Select Scann, Skip or Update API Key",
                   canPickMany: false  // Only allow a single selection
                 }
               );
@@ -64,7 +89,23 @@ function activate(context) {
                     prompt: "File Name 1 | File Name 2",
                     value: ""
                     });
-            } else 
+            } else if (searchQuery == "Update API Key")
+            {
+                const newApiKey = await vscode.window.showInputBox({
+                    prompt: 'Enter your new API key',
+                    ignoreFocusOut: true,
+                    password: true // Mask input for security
+                });
+            
+                if (newApiKey) {
+                    await context.secrets.store('userApiKey', newApiKey);
+                    vscode.window.showInformationMessage('API key updated successfully!');
+                    return;
+                } else {
+                    vscode.window.showErrorMessage('API key update was canceled.');
+                }
+            }
+            else 
             {
                 vscode.window.showInformationMessage('You have exited the application');
                 return;
@@ -139,7 +180,7 @@ function activate(context) {
             try {
                 matchFileInfo(jsFile);
                 let jsResults = matchAPIs(jsFile, "js");
-                apiResults1 = await fetchApiResults(jsResults, jsFile, "js");
+                apiResults1 = await fetchApiResults(jsResults, jsFile, "js", existingKey);
                 processFiles(jsFile, apiResults1, "js", context, hoverProviders);
             } catch (error) {
                 console.error("Error processing JS files:", error);
@@ -148,7 +189,7 @@ function activate(context) {
                 matchFileInfo(pyFile);
                 let pyResults = matchAPIs(pyFile, "py");
                 console.log(pyResults);
-                apiResults2 = await fetchApiResults(pyResults, pyFile, "py");
+                apiResults2 = await fetchApiResults(pyResults, pyFile, "py", existingKey);
                 processFiles(pyFile, apiResults2, "py", context, hoverProviders);
             } catch (error) {
                 console.error("Error processing PY files:", error);
@@ -157,7 +198,7 @@ function activate(context) {
             try {
                 matchFileInfo(csFile);
                 let csResults = matchAPIs(csFile, "cs");
-                apiResults = await fetchApiResults(csResults, csFile, "cs");
+                apiResults = await fetchApiResults(csResults, csFile, "cs", existingKey);
                 processFiles(csFile, apiResults, "cs", context, hoverProviders);
             } catch (error) {
                 console.error("Error processing CS files:", error);
@@ -166,7 +207,7 @@ function activate(context) {
             try {
                 matchFileInfo(phpFile);
                 let phpResults = matchAPIs(phpFile, "php");
-                apiResults3 = await fetchApiResults(phpResults, phpFile, "php");
+                apiResults3 = await fetchApiResults(phpResults, phpFile, "php", existingKey);
                 processFiles(phpFile, apiResults3, "php", context, hoverProviders);
             } catch (error) {
                 console.error("Error processing PHP files:", error);
@@ -175,7 +216,7 @@ function activate(context) {
             try {
                 matchFileInfo(tsFile);
                 let tsResults = matchAPIs(tsFile, "tsx");
-                apiResults4 = await fetchApiResults(tsResults, tsFile, "tsx");
+                apiResults4 = await fetchApiResults(tsResults, tsFile, "tsx", existingKey);
                 processFiles(tsFile, apiResults4, "tsx", context, hoverProviders);
             } catch (error) {
                 console.error("Error processing TS files:", error);

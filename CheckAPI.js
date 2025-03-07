@@ -24,7 +24,7 @@ const request = require('supertest');
 const xlsx = require('xlsx');
 
 
-async function fetchApiResults(fullURLS, extractedData, extension) {
+async function fetchApiResults(fullURLS, extractedData, extension, apikey) {
     const results = new Map();
     const processedKeys = new Set();
     for (const [originalUrl, finalUrl] of fullURLS) {
@@ -282,16 +282,28 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
                                         message: data.message,
                                     });
                                 } else {
-                                    const GoogleResults = await searchGoogle(baseURL + " " + data.message);
-                                    const GoogleResults_OfficialDocumentation = await searchGoogle("Search for Official API Documentation for " + baseURL);
+                                    if(apikey == undefined || apikey == ' ')
+                                    {
+                                        const GoogleResults_OfficialDocumentation = await searchGoogle("Search for Official API Documentation for " + baseURL, apikey);
                                     
-                                    markdownString.appendMarkdown(`**Status**: <span style="color:var(--vscode-charts-red);">${data.status}</span>\n\n`);
-                                    markdownString.appendMarkdown(`**API Name**: ${baseURL}\n\n`);
-                                    markdownString.appendMarkdown(`**Official API Link**: [Link](${GoogleResults_OfficialDocumentation[0].link})\n\n`);
-                                    markdownString.appendMarkdown(`**Message**: ${data.message}\n\n`);
-                                    markdownString.appendMarkdown(`**Recommended Fix (from ${GoogleResults[0].displayLink})**:\n\n`);
-                                    markdownString.appendMarkdown(`**Title**: ${GoogleResults[0].title}\n\n`);
-                                    markdownString.appendMarkdown(`**Link**: [${GoogleResults[0].link}](${GoogleResults[0].link})\n\n`);
+                                        markdownString.appendMarkdown(`**Status**: <span style="color:var(--vscode-charts-red);">${data.status}</span>\n\n`);
+                                        markdownString.appendMarkdown(`**API Name**: ${baseURL}\n\n`);
+                                        markdownString.appendMarkdown(`**Official API Link**: [Link](${GoogleResults_OfficialDocumentation[0].link})\n\n`);
+                                        markdownString.appendMarkdown(`**Message**: ${data.message}\n\n`);
+                                    } else
+                                    {
+                                        const GoogleResults = await searchGoogle(baseURL + " " + data.message);
+                                        const GoogleResults_OfficialDocumentation = await searchGoogle("Search for Official API Documentation for " + baseURL, apikey);
+                                    
+                                        markdownString.appendMarkdown(`**Status**: <span style="color:var(--vscode-charts-red);">${data.status}</span>\n\n`);
+                                        markdownString.appendMarkdown(`**API Name**: ${baseURL}\n\n`);
+                                        markdownString.appendMarkdown(`**Official API Link**: [Link](${GoogleResults_OfficialDocumentation[0].link})\n\n`);
+                                        markdownString.appendMarkdown(`**Message**: ${data.message}\n\n`);
+                                        markdownString.appendMarkdown(`**Recommended Fix (from ${GoogleResults[0].displayLink})**:\n\n`);
+                                        markdownString.appendMarkdown(`**Title**: ${GoogleResults[0].title}\n\n`);
+                                        markdownString.appendMarkdown(`**Link**: [${GoogleResults[0].link}](${GoogleResults[0].link})\n\n`);
+                                    }
+                                    
                                     results.set(originalUrl, {
                                         markdown: markdownString,
                                         url : encodedUrl,
@@ -318,8 +330,8 @@ async function fetchApiResults(fullURLS, extractedData, extension) {
 
 
 
-async function searchGoogle(query) {
-    const apiKey = 'AIzaSyD58BpSABrGS3CxTTvi_swiBPVN41A5zS8'; // Replace with your Google API key
+async function searchGoogle(query, apikey) {
+    const apiKey = apikey; // Replace with your Google API key
     const searchEngineId = 'b4f6477f271ff4970'; // Replace with your Custom Search Engine ID
     const apiUrl = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURIComponent(query)}`;
 
