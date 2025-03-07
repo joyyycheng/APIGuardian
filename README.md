@@ -23,6 +23,8 @@ As a limitation, the extension can scan GET, POST, UPDATE, and DELETE API endpoi
     7. Message of the API
 
 - Hover message when the developer mouse over the API found in the project
+    1. To view recommended fix for any error occured in your API Endpoint, follow the steps in this link to create an API Key. https://developers.google.com/custom-search/v1/overview
+    2. After creating the key, follow the Instructions at "How use the extension" to save the key. 
 <div style="text-align: center;">
     <p>Success Hover Message </p>
     <img src="media/SuccessMessage.gif" width="50%" height="50%" alt="Success Message"/>
@@ -49,7 +51,8 @@ npm install
 </div>
 
 4. Press **Enter** to run the command
-5. The extension will ask if you will like to Scan or Skip files, you can make choose either one
+5. When running the extension for the first time, paste the API key in the prompt. 
+5. The extension will ask if you will like to Scan or Skip files or you can Update the API key, you can choose one of the option:
 <div style="text-align: center;">
     <img src="media/scanorskip.png" width="50%" height="50%" alt="Success Message"/>
 </div>
