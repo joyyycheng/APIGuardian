@@ -83,7 +83,7 @@ If you have any questions or feedback, feel free to reach out to joyyyy.cheng@gm
 - **Instructor**: Dr Peter Yau
 <br>
 <div style="text-align: center;">
-    <img src="media\schoolLogo.png" width="50%" height="50%" alt="Success Message"/>
+    <img src="media/schoolLogo.png" width="50%" height="50%" alt="Success Message"/>
 </div>
 
 
@@ -94,7 +94,7 @@ WizVision is an established Information Communications Technologies (ICT) System
 Its core capabilities lie in its design, development as well as maintenance of turnkey enterprise class software applications for both the public as well as the private sector. Wizvision has strong domain knowledge in transactional based applications such as e-payment and billing systems. Our clients include international banks, leading payment processors, large enterprises and government agencies.
 <br>
 <div style="text-align: center;">
-    <img src="media\wizvision.png" width="40%" height="40%" alt="Success Message"/>
+    <img src="media/wizvision.png" width="40%" height="40%" alt="Success Message"/>
 </div>
 
 ## Contact
