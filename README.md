@@ -40,13 +40,13 @@ npm install
 2. After opening your project, press **CTRL + SHIFT + P**
 3. Type **Search For API**
 <div style="text-align: center;">
-    <img src="media\commandImage.png" width="50%" height="50%" alt="Success Message"/>
+    <img src="media/commandImage.png" width="50%" height="50%" alt="Success Message"/>
 </div>
 
 4. Press **Enter** to run the command
 5. The extension will ask if you will like to Scan or Skip files, you can make choose either one
 <div style="text-align: center;">
-    <img src="media\scanorskip.png" width="50%" height="50%" alt="Success Message"/>
+    <img src="media/scanorskip.png" width="50%" height="50%" alt="Success Message"/>
 </div>
 
 6. Specify which files to scan or skip:
