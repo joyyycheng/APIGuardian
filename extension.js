@@ -28,7 +28,6 @@ const { matchAPIs } = require('./FindAPI');
 const { processFiles } = require('./HighlightandMessage');
 const { fetchApiResults, generateReport } = require('./CheckAPI');
 const { findSimilarTexts } = require('./IntentClassification');
-const { accessDatabase_SQL, DeleteDatabase } = require('./Database');
 /**
  * @param {vscode.ExtensionContext} context
  */
