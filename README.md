@@ -20,10 +20,10 @@ This project was created as Postman can be a tedious and long process when testi
 - Hover message when the developer mouse over the API found in the project
 <div style="text-align: center;">
     <p>Success Hover Message </p>
-    <img src="media\SuccessMessage.gif" width="50%" height="50%" alt="Success Message"/>
+    <img src="media/SuccessMessage.gif" width="50%" height="50%" alt="Success Message"/>
     <br>
     <p>Failed Hover Message </p>
-    <img src="media\Failedmessage.gif" width="50%" height="50%" alt="Failed Message"/>
+    <img src="media/Failedmessage.gif" width="50%" height="50%" alt="Failed Message"/>
 </div>
 
 ## Setup Instructions
