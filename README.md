@@ -29,8 +29,11 @@ As a limitation, the extension can scan GET, POST, UPDATE, and DELETE API endpoi
     <p>Success Hover Message </p>
     <img src="media/SuccessMessage.gif" width="50%" height="50%" alt="Success Message"/>
     <br>
-    <p>Failed Hover Message </p>
-    <img src="media/Failedmessage.gif" width="50%" height="50%" alt="Failed Message"/>
+    <p>Failed Hover Message with API Key</p>
+    <img src="media/Failedmessage.gif" width="50%" height="50%" alt="Failed Message with API Key"/>
+    <br>
+    <p>Failed Hover Message without API Key</p>
+    <img src="media/Failedmessage_v2.gif" width="50%" height="50%" alt="Failed Message without API Key"/>
 </div>
 
 ## Setup Instructions
@@ -47,14 +50,14 @@ npm install
 2. After opening your project, press **CTRL + SHIFT + P**
 3. Type **Search For API**
 <div style="text-align: center;">
-    <img src="media/commandImage.png" width="50%" height="50%" alt="Success Message"/>
+    <img src="media/commandImage.png" width="50%" height="50%" alt="Command Message"/>
 </div>
 
 4. Press **Enter** to run the command
 5. When running the extension for the first time, paste the API key in the prompt. 
 5. The extension will ask if you will like to Scan or Skip files or you can Update the API key, you can choose one of the option:
 <div style="text-align: center;">
-    <img src="media/scanorskip.png" width="50%" height="50%" alt="Success Message"/>
+    <img src="media/scanorskip.png" width="50%" height="50%" alt="ScanorSkip Message"/>
 </div>
 
 6. Specify which files to scan or skip:
