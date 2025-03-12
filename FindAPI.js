@@ -27,7 +27,7 @@ function matchAPIs(extractedData, extension)
     for (const fileMap of extractedData) {
         for (const [fileName, fileData] of fileMap) {
             for (const [key, value] of fileData.variables.entries()) {
-                if(value.length > 500)
+                if(value == undefined || value.length > 500 || value == null)
                 {
                     continue;
                 }
@@ -92,8 +92,7 @@ function matchAPIs(extractedData, extension)
                     } 
                     else if(extension == "py")
                     {
-                        newURLS[i] = newURLS[i]
-                        .replace(new RegExp(`\\{${key}\\}`, 'g'), value)
+                        newURLS[i] = newURLS[i].replace(new RegExp(`\\{${key}\\}`, 'g'), value)
                         
                     // Create a new string with the replaced value
                     } else if (extension == "cs")

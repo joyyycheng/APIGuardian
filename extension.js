@@ -180,6 +180,7 @@ function activate(context) {
             try {
                 matchFileInfo(jsFile);
                 let jsResults = matchAPIs(jsFile, "js");
+                console.log(jsFile);
                 apiResults1 = await fetchApiResults(jsResults, jsFile, "js", existingKey);
                 processFiles(jsFile, apiResults1, "js", context, hoverProviders);
             } catch (error) {
@@ -188,7 +189,6 @@ function activate(context) {
             try {
                 matchFileInfo(pyFile);
                 let pyResults = matchAPIs(pyFile, "py");
-                console.log(pyResults);
                 apiResults2 = await fetchApiResults(pyResults, pyFile, "py", existingKey);
                 processFiles(pyFile, apiResults2, "py", context, hoverProviders);
             } catch (error) {

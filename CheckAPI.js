@@ -292,7 +292,7 @@ async function fetchApiResults(fullURLS, extractedData, extension, apikey) {
                                         markdownString.appendMarkdown(`**Message**: ${data.message}\n\n`);
                                     } else
                                     {
-                                        const GoogleResults = await searchGoogle(baseURL + " " + data.message);
+                                        const GoogleResults = await searchGoogle(baseURL + " " + data.message, apikey);
                                         const GoogleResults_OfficialDocumentation = await searchGoogle("Search for Official API Documentation for " + baseURL, apikey);
                                     
                                         markdownString.appendMarkdown(`**Status**: <span style="color:var(--vscode-charts-red);">${data.status}</span>\n\n`);

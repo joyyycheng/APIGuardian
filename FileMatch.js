@@ -30,40 +30,15 @@ function matchFileInfo(extractedData, fileNames) {
                     const functionName = key;
                     const results = [];
                     for (const param of value) {
-                        let matched = false;
     
-                        // Check against variables in the current file
-                        for (const [variableKey, variableValue] of fileData.variables) {
-                            if (param === variableKey) {
-                                results.push(variableValue);
-                                matched = true;
-                                break; // No need to check further once a match is found
+                        if (Array.isArray(param)) {
+                            for (const subParam of param) {
+                                processParam(subParam, results, fileData, extractedData, fileName, functionName);
                             }
+                        } else {
+                            processParam(param, results, fileData, extractedData, fileName, functionName);
                         }
-    
-                        // If no match is found in the current file, check other files
-                        if (!matched) {
-                            for (const otherFileMap of extractedData) {
-                                for (const [otherFileName, otherFileData] of otherFileMap) {
-                                    if (otherFileName !== fileName) { // Avoid re-checking the same file
-                                        for (const [otherVariableKey, otherVariableValue] of otherFileData.variables) {
-                                            if (param === otherVariableKey) {
-                                                results.push(otherVariableValue);
-                                                matched = true;
-                                                break; // Stop searching once a match is found
-                                            }
-                                        }
-                                        if (matched) break; // Stop searching other files once a match is found
-                                    }
-                                }
-                                if (matched) break; // Stop searching other fileMaps once a match is found
-                            }
-                        }
-    
-                        // If still no match, treat it as a direct value
-                        if (!matched) {
-                            results.push(param); // Directly add the literal value
-                        }
+                        
                     }
                     if(!functionFound.has(functionName))
                     {
@@ -163,6 +138,85 @@ function matchFileInfo(extractedData, fileNames) {
     }
     
 }
+}
+
+
+function processParam(param, results, fileData, extractedData, fileName, functionName) {
+    let matched = false;
+
+    // Check against variables in the current file
+    for (const [variableKey, variableValue] of fileData.variables) {
+        if (param === variableKey) {
+            results.push(variableValue);
+            matched = true;
+            break; // No need to check further once a match is found
+        }
+    }
+
+    // If no match is found in the current file, check other files
+    if (!matched) {
+        for (const otherFileMap of extractedData) {
+            for (const [otherFileName, otherFileData] of otherFileMap) {
+                if (otherFileName !== fileName) { // Avoid re-checking the same file
+
+                    if(otherFileData.variables.has(param))
+                    {
+                        results.push(otherFileData.variables.get(param));
+                        matched = true;
+                        break;
+                    }
+
+                    for (const [otherFunctionName, otherFunctionParams] of otherFileData.functionCalls) {
+                        if(otherFunctionName === functionName)
+                        {
+                            if(otherFunctionParams.length == 1)
+                            {
+
+                                const singleParam = otherFunctionParams[0];
+                                
+                                if(otherFileData.variables.has(singleParam))
+                                {
+                                    results.push(otherFileData.variables.get(singleParam));
+                                    matched = true;
+                                    break;
+                                }
+
+                                if(Array.isArray(singleParam))
+                                {
+                                    break;
+                                } else
+                                {
+                                    results.push(singleParam);
+                                    matched = true;
+                                    break;
+                                }
+                                
+                            } else
+                            {
+                                for (const otherParam of otherFunctionParams) {
+                                    if (param === otherParam) {
+                                        results.push(otherParam);
+                                        matched = true;
+                                        break; // Stop searching once a match is found
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+
+
+                    if (matched) break; // Stop searching other files once a match is found
+                }
+            }
+            if (matched) break; // Stop searching other fileMaps once a match is found
+        }
+    }
+
+    if (!matched) {
+        results.push(param); // Directly add the literal value
+    }
+
 }
 
 module.exports = { matchFileInfo };

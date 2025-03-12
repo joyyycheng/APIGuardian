@@ -6,7 +6,7 @@
     "type": "git",
     "url": "https://github.com/joyyycheng/APIGuardian.git"
   },
-  "version": "0.0.4",
+  "version": "0.0.8",
   "publisher": "APIGuardian-vsc",
   "engines": {
     "vscode": "^1.94.0"
